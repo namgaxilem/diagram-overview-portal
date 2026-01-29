@@ -1,5 +1,17 @@
-import ArchitectureDiagramV3 from "./components/ArchitectureDiagramV3";
+import Header from "./components/Header";
+import Hero from "./components/Hero";
+import SystemArchitecture from "./components/SystemArchitecture";
+import Features from "./components/Features";
+import Footer from "./components/Footer";
 
 export default function Home() {
-  return <ArchitectureDiagramV3 />;
+  return (
+    <main className="min-h-screen">
+      <Header />
+      <Hero />
+      <SystemArchitecture />
+      <Features />
+      <Footer />
+    </main>
+  );
 }
