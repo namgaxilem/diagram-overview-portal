@@ -1,4 +1,4 @@
-import ArchitectureDiagramV3 from "./ArchitectureDiagramV3";
+// import ArchitectureDiagramV3 from "./ArchitectureDiagramV3";
 
 export default function SystemArchitecture() {
   return (
@@ -18,7 +18,7 @@ export default function SystemArchitecture() {
 
         {/* Architecture Diagram */}
         <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-100">
-          <ArchitectureDiagramV3 />
+          {/* <ArchitectureDiagramV3 /> */}
         </div>
       </div>
     </section>
