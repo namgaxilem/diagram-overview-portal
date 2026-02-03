@@ -16,7 +16,7 @@ export function BackendNode({ data }: NodeProps) {
   if (nodeData.variant === "kbs") {
     bgClass = "border-purple-600 bg-purple-600 hover:bg-purple-700";
   } else if (nodeData.variant === "mcp-servers") {
-    bgClass = "border-blue-500 bg-blue-500 hover:bg-purple-700";
+    bgClass = "border-blue-500 bg-blue-500 hover:bg-blue-700";
   }
 
   return (
@@ -26,7 +26,7 @@ export function BackendNode({ data }: NodeProps) {
         href={nodeData.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`block w-[130px] h-[55px] rounded border-2 ${bgClass} text-white text-center p-2 transition-all duration-200 hover:scale-105`}
+        className={`block w-[130px] h-[55px] rounded border-2 ${bgClass} text-white text-center p-2 transition-all duration-200 hover:scale-110 cursor-pointer shadow-md hover:shadow-lg`}
       >
         <div className="font-semibold text-xs leading-tight">{nodeData.label}</div>
         {nodeData.sublabel && (

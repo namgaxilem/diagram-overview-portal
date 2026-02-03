@@ -268,7 +268,7 @@ export default function DiagramFlow() {
   }, [config]);
 
   return (
-    <div className="w-full h-[580px]">
+    <div className="w-full h-[580px] [&_.react-flow__node]:pointer-events-auto [&_.react-flow__node]:cursor-pointer">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -279,9 +279,9 @@ export default function DiagramFlow() {
         fitViewOptions={{ padding: 0.15 }}
         nodesDraggable={false}
         nodesConnectable={false}
-        nodesFocusable={false}
+        nodesFocusable={true}
         edgesFocusable={false}
-        elementsSelectable={false}
+        elementsSelectable={true}
         panOnDrag={false}
         zoomOnScroll={false}
         zoomOnPinch={false}

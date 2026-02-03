@@ -18,7 +18,7 @@ export function GatewayNode({ data }: NodeProps) {
         href={nodeData.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block w-[750px] rounded bg-gradient-to-r from-emerald-500 to-teal-500 py-2 px-4 text-center text-white shadow-md transition-all duration-200 hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg"
+        className="block w-[750px] rounded bg-gradient-to-r from-emerald-500 to-teal-500 py-2 px-4 text-center text-white shadow-md transition-all duration-200 hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg hover:scale-[1.02] cursor-pointer"
       >
         <span className="font-semibold text-sm">{nodeData.label}</span>
         <span className="ml-2 text-emerald-100 text-sm">

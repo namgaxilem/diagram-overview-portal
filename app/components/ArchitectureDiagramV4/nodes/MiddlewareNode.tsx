@@ -38,7 +38,7 @@ export function MiddlewareNode({ data }: NodeProps) {
         href={nodeData.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`py-3 block w-[100px] min-h-[80px] rounded border-2 ${bgClass} text-white text-center p-2 transition-all duration-200 hover:scale-105`}
+        className={`py-3 block w-[100px] min-h-[80px] rounded border-2 ${bgClass} text-white text-center p-2 transition-all duration-200 hover:scale-110 cursor-pointer shadow-md hover:shadow-lg`}
       >
         <div className="font-semibold text-xs leading-tight">{nodeData.label}</div>
         {nodeData.sublabel && (
