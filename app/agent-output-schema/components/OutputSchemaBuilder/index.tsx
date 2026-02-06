@@ -12,7 +12,6 @@ import {
   Divider,
   Tag,
 } from 'antd';
-import type { FormInstance } from 'antd';
 import { CheckCircleOutlined, CodeOutlined, ToolOutlined } from '@ant-design/icons';
 import SchemaFieldList from './SchemaFieldList';
 import {
@@ -27,10 +26,11 @@ const { Text, Title } = Typography;
 const { TextArea } = Input;
 
 interface OutputSchemaBuilderProps {
-  form: FormInstance;
+  setOutputSchema: (schema: string) => void;
+  setOutputSchemaEnabled: (enabled: boolean) => void;
 }
 
-const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ form }) => {
+const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSchema, setOutputSchemaEnabled }) => {
   const [enabled, setEnabled] = useState<boolean>(false);
   const [mode, setMode] = useState<'builder' | 'raw'>('builder');
   const [fields, setFields] = useState<SchemaField[]>([createEmptyField()]);
@@ -58,11 +58,11 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ form }) => {
     return '';
   }, [enabled, mode, fields, rawSchema]);
 
-  // Sync computed schema to the antd form instance
+  // Propagate values to parent
   useEffect(() => {
-    form.setFieldValue('outputSchemaEnabled', enabled);
-    form.setFieldValue('outputSchema', enabled ? computedSchema : '');
-  }, [enabled, computedSchema, form]);
+    setOutputSchemaEnabled(enabled);
+    setOutputSchema(enabled ? computedSchema : '');
+  }, [enabled, computedSchema, setOutputSchema, setOutputSchemaEnabled]);
 
   // Handle mode switch
   const handleModeChange = useCallback(

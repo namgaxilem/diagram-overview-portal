@@ -1,33 +1,31 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Form, Button, Typography, Card, message } from 'antd';
+import { Button, Typography, Card, message } from 'antd';
 import { CopyOutlined, EyeOutlined } from '@ant-design/icons';
 import OutputSchemaBuilder from './components/OutputSchemaBuilder';
 
 const { Title, Text } = Typography;
 
 export default function AgentOutputSchemaPage() {
-  const [form] = Form.useForm();
+  const [outputSchema, setOutputSchema] = useState<string>('');
+  const [outputSchemaEnabled, setOutputSchemaEnabled] = useState<boolean>(false);
   const [schemaOutput, setSchemaOutput] = useState<string>('');
 
   const handleGetSchema = () => {
-    const enabled = form.getFieldValue('outputSchemaEnabled');
-    const schema = form.getFieldValue('outputSchema');
-
-    if (!enabled) {
+    if (!outputSchemaEnabled) {
       message.info('Output schema is not enabled');
       setSchemaOutput('');
       return;
     }
 
-    if (!schema) {
+    if (!outputSchema) {
       message.warning('No valid schema defined yet. Add at least one named property.');
       setSchemaOutput('');
       return;
     }
 
-    setSchemaOutput(schema);
+    setSchemaOutput(outputSchema);
     message.success('Schema retrieved successfully');
   };
 
@@ -51,7 +49,10 @@ export default function AgentOutputSchemaPage() {
         </Text>
       </div>
 
-      <OutputSchemaBuilder form={form} />
+      <OutputSchemaBuilder
+        setOutputSchema={setOutputSchema}
+        setOutputSchemaEnabled={setOutputSchemaEnabled}
+      />
 
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
         <Button
