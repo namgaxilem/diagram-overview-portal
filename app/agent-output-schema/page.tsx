@@ -52,6 +52,14 @@ export default function AgentOutputSchemaPage() {
       <OutputSchemaBuilder
         setOutputSchema={setOutputSchema}
         setOutputSchemaEnabled={setOutputSchemaEnabled}
+        initOutputSchema={JSON.stringify({
+          type: 'object',
+          properties: {
+            answer: { type: 'string', description: "The agent's answer" },
+            confidence: { type: 'number', description: 'Confidence score between 0 and 1' },
+          },
+          required: ['answer'],
+        })}
       />
 
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>

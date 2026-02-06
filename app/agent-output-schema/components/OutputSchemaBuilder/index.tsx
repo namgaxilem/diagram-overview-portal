@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Switch,
   Segmented,
@@ -28,14 +28,32 @@ const { TextArea } = Input;
 interface OutputSchemaBuilderProps {
   setOutputSchema: (schema: string) => void;
   setOutputSchemaEnabled: (enabled: boolean) => void;
+  initOutputSchema?: string;
 }
 
-const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSchema, setOutputSchemaEnabled }) => {
+const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSchema, setOutputSchemaEnabled, initOutputSchema }) => {
+  const initialized = useRef(false);
   const [enabled, setEnabled] = useState<boolean>(false);
   const [mode, setMode] = useState<'builder' | 'raw'>('builder');
   const [fields, setFields] = useState<SchemaField[]>([createEmptyField()]);
   const [rawSchema, setRawSchema] = useState<string>('');
   const [rawError, setRawError] = useState<string | undefined>();
+
+  // Initialize from initOutputSchema on first mount
+  useEffect(() => {
+    if (initialized.current || !initOutputSchema) return;
+    initialized.current = true;
+
+    const result = validateJsonSchema(initOutputSchema);
+    if (result.valid && result.schema) {
+      const parsed = jsonSchemaToFields(result.schema);
+      if (parsed.length > 0) {
+        setFields(parsed);
+      }
+      setRawSchema(JSON.stringify(result.schema, null, 2));
+      setEnabled(true);
+    }
+  }, [initOutputSchema]);
 
   // Compute JSON schema string from current state
   const computedSchema = useMemo(() => {
