@@ -1,0 +1,36 @@
+{
+  "sub_agents": [],
+  "running_url": null,
+  "agent_card": null,
+  "policy_config": {
+    "safety_instruction": "\n\nIMPORTANT: Do not generate harmful, biased, or inappropriate content.",
+    "blocked_words": ["kill", "die"],
+    "pii_patterns": {
+      "email": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+      "phone": "\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b",
+      "ssn": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+      "credit_card": "\\b\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}\\b",
+      "special": "|\\b/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
+    },
+    "generate_content_config": {
+      "safety_settings": [
+        {
+          "category": "HARM_CATEGORY_HARASSMENT",
+          "threshold": "BLOCK_LOW_AND_ABOVE"
+        },
+        {
+          "category": "HARM_CATEGORY_HATE_SPEECH",
+          "threshold": "BLOCK_LOW_AND_ABOVE"
+        },
+        {
+          "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          "threshold": "BLOCK_LOW_AND_ABOVE"
+        },
+        {
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "threshold": "BLOCK_LOW_AND_ABOVE"
+        }
+      ]
+    }
+  }
+}
