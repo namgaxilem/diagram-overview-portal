@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button, Typography, Card, message, Switch, Space } from 'antd';
 import { CopyOutlined, EyeOutlined } from '@ant-design/icons';
+import { Button, Card, message, Space, Switch, Typography } from 'antd';
+import { useState } from 'react';
 import AgentPolicyConfigBuilder, {
   type PolicyConfig,
 } from './components/AgentPolicyConfigBuilder';

@@ -1,58 +1,35 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Input,
+  CloseOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
+import {
   Button,
-  Select,
   Card,
+  Divider,
+  Input,
+  Select,
   Space,
   Tag,
   Typography,
-  Divider,
 } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  PlusOutlined,
-  DeleteOutlined,
-  CloseOutlined,
-} from '@ant-design/icons';
+  CATEGORY_LABELS,
+  CATEGORY_OPTIONS,
+  THRESHOLD_LABELS,
+  THRESHOLD_OPTIONS,
+  type Category,
+  type PolicyConfig,
+  type Threshold,
+} from './types';
+
+export type { PolicyConfig } from './types';
 
 const { TextArea } = Input;
 const { Text } = Typography;
-
-const CATEGORY_OPTIONS = [
-  'HARM_CATEGORY_HATE_SPEECH',
-  'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-  'HARM_CATEGORY_DANGEROUS_CONTENT',
-  'HARM_CATEGORY_HARASSMENT',
-  'HARM_CATEGORY_CIVIC_INTEGRITY',
-] as const;
-
-const THRESHOLD_OPTIONS = [
-  'OFF',
-  'BLOCK_NONE',
-  'BLOCK_ONLY_HIGH',
-  'BLOCK_MEDIUM_AND_ABOVE',
-  'BLOCK_LOW_AND_ABOVE',
-  'HARM_BLOCK_THRESHOLD_UNSPECIFIED',
-] as const;
-
-type Category = (typeof CATEGORY_OPTIONS)[number];
-type Threshold = (typeof THRESHOLD_OPTIONS)[number];
-
-interface SafetySetting {
-  category: Category;
-  threshold: Threshold;
-}
-
-export interface PolicyConfig {
-  safety_instruction: string;
-  blocked_words: string[];
-  pii_patterns: Record<string, string>;
-  generate_content_config: {
-    safety_settings: SafetySetting[];
-  };
-}
 
 interface AgentPolicyConfigBuilderProps {
   initialPolicyConfig?: PolicyConfig;
@@ -154,26 +131,36 @@ export default function AgentPolicyConfigBuilder({
   };
 
   // --- Safety Settings ---
+  const [showPendingRow, setShowPendingRow] = useState(false);
+
   const usedCategories = config.generate_content_config.safety_settings.map(
     (s) => s.category,
   );
 
+  const availableCategories = CATEGORY_OPTIONS.filter(
+    (c) => !usedCategories.includes(c),
+  );
+
   const handleAddSafetySetting = () => {
-    if (config.generate_content_config.safety_settings.length >= 5) return;
-    const available = CATEGORY_OPTIONS.filter(
-      (c) => !usedCategories.includes(c),
-    );
-    if (available.length === 0) return;
+    setShowPendingRow(true);
+  };
+
+  const handleCommitPendingCategory = (category: Category) => {
     updateConfig((prev) => ({
       ...prev,
       generate_content_config: {
         ...prev.generate_content_config,
         safety_settings: [
           ...prev.generate_content_config.safety_settings,
-          { category: available[0], threshold: 'BLOCK_LOW_AND_ABOVE' },
+          { category, threshold: 'BLOCK_LOW_AND_ABOVE' },
         ],
       },
     }));
+    setShowPendingRow(false);
+  };
+
+  const handleCancelPendingRow = () => {
+    setShowPendingRow(false);
   };
 
   const handleRemoveSafetySetting = (index: number) => {
@@ -361,21 +348,24 @@ export default function AgentPolicyConfigBuilder({
               icon={<PlusOutlined />}
               onClick={handleAddSafetySetting}
               disabled={
-                config.generate_content_config.safety_settings.length >= 5
+                showPendingRow ||
+                config.generate_content_config.safety_settings.length >= 5 ||
+                availableCategories.length === 0
               }
             >
               Add Setting
             </Button>
           )}
         </div>
-        {config.generate_content_config.safety_settings.length === 0 && (
-          <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
-            No safety settings configured.
-          </Text>
-        )}
+        {config.generate_content_config.safety_settings.length === 0 &&
+          !showPendingRow && (
+            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+              No safety settings configured.
+            </Text>
+          )}
         {config.generate_content_config.safety_settings.map(
           (setting, index) => {
-            const availableCategories = CATEGORY_OPTIONS.filter(
+            const categoryOptionsForRow = CATEGORY_OPTIONS.filter(
               (c) =>
                 c === setting.category || !usedCategories.includes(c),
             );
@@ -394,8 +384,8 @@ export default function AgentPolicyConfigBuilder({
                   value={setting.category}
                   onChange={(val) => handleChangeSafetyCategory(index, val)}
                   disabled={readOnly}
-                  options={availableCategories.map((c) => ({
-                    label: c,
+                  options={categoryOptionsForRow.map((c) => ({
+                    label: CATEGORY_LABELS[c],
                     value: c,
                   }))}
                 />
@@ -405,7 +395,7 @@ export default function AgentPolicyConfigBuilder({
                   onChange={(val) => handleChangeSafetyThreshold(index, val)}
                   disabled={readOnly}
                   options={THRESHOLD_OPTIONS.map((t) => ({
-                    label: t,
+                    label: THRESHOLD_LABELS[t],
                     value: t,
                   }))}
                 />
@@ -420,6 +410,41 @@ export default function AgentPolicyConfigBuilder({
               </div>
             );
           },
+        )}
+        {showPendingRow && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 8,
+            }}
+          >
+            <Select
+              style={{ flex: 1 }}
+              placeholder="Select a category"
+              onChange={(val) => handleCommitPendingCategory(val)}
+              options={availableCategories.map((c) => ({
+                label: CATEGORY_LABELS[c],
+                value: c,
+              }))}
+            />
+            <Select
+              style={{ width: 260 }}
+              value={'BLOCK_LOW_AND_ABOVE'}
+              disabled
+              options={THRESHOLD_OPTIONS.map((t) => ({
+                label: THRESHOLD_LABELS[t],
+                value: t,
+              }))}
+            />
+            <Button
+              type="text"
+              danger
+              icon={<CloseOutlined />}
+              onClick={handleCancelPendingRow}
+            />
+          </div>
         )}
       </div>
     </Card>
