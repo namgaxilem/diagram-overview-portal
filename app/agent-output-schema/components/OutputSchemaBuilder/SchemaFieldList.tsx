@@ -30,12 +30,16 @@ interface SchemaFieldListProps {
   fields: SchemaField[];
   onChange: (fields: SchemaField[]) => void;
   depth?: number;
+  readOnly?: boolean;
+  isAllRequired?: boolean;
 }
 
 const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
   fields,
   onChange,
   depth = 0,
+  readOnly = false,
+  isAllRequired = false,
 }) => {
   const updateField = (index: number, updates: Partial<SchemaField>) => {
     const newFields = [...fields];
@@ -93,6 +97,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                 }
                 style={{ flex: 1, minWidth: 140 }}
                 status={field.name.trim() === '' ? 'warning' : undefined}
+                disabled={readOnly}
               />
               <Select
                 value={field.type}
@@ -111,48 +116,52 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                 }}
                 options={JSON_SCHEMA_TYPES}
                 style={{ width: 120 }}
+                disabled={readOnly}
               />
               <Tooltip title="Mark this property as required">
                 <Checkbox
-                  checked={field.required}
+                  checked={isAllRequired || field.required}
                   onChange={(e) =>
                     updateField(index, {
                       required: (e.target as HTMLInputElement).checked,
                     })
                   }
+                  disabled={readOnly || isAllRequired}
                 >
                   Required
                 </Checkbox>
               </Tooltip>
-              <Space size={2}>
-                <Tooltip title="Move up">
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<ArrowUpOutlined />}
-                    disabled={index === 0}
-                    onClick={() => moveField(index, 'up')}
-                  />
-                </Tooltip>
-                <Tooltip title="Move down">
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<ArrowDownOutlined />}
-                    disabled={index === fields.length - 1}
-                    onClick={() => moveField(index, 'down')}
-                  />
-                </Tooltip>
-                <Tooltip title="Remove property">
-                  <Button
-                    type="text"
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => removeField(index)}
-                  />
-                </Tooltip>
-              </Space>
+              {!readOnly && (
+                <Space size={2}>
+                  <Tooltip title="Move up">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<ArrowUpOutlined />}
+                      disabled={index === 0}
+                      onClick={() => moveField(index, 'up')}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Move down">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<ArrowDownOutlined />}
+                      disabled={index === fields.length - 1}
+                      onClick={() => moveField(index, 'down')}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Remove property">
+                    <Button
+                      type="text"
+                      size="small"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => removeField(index)}
+                    />
+                  </Tooltip>
+                </Space>
+              )}
             </div>
 
             {/* Row 2: Description */}
@@ -162,6 +171,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
               onChange={(e) =>
                 updateField(index, { description: e.target.value })
               }
+              disabled={readOnly}
             />
 
             {/* Enum values for string type */}
@@ -172,6 +182,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                 onChange={(e) =>
                   updateField(index, { enumValues: e.target.value })
                 }
+                disabled={readOnly}
               />
             )}
 
@@ -206,6 +217,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                   }}
                   options={ARRAY_ITEM_TYPES}
                   style={{ width: 120 }}
+                  disabled={readOnly}
                 />
               </div>
             )}
@@ -233,6 +245,8 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                     updateField(index, { properties: newProps })
                   }
                   depth={depth + 1}
+                  readOnly={readOnly}
+                  isAllRequired={isAllRequired}
                 />
               </div>
             )}
@@ -240,15 +254,17 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
         </Card>
       ))}
 
-      <Button
-        type="dashed"
-        onClick={addField}
-        block
-        icon={<PlusOutlined />}
-        style={{ marginTop: 4 }}
-      >
-        Add Property
-      </Button>
+      {!readOnly && (
+        <Button
+          type="dashed"
+          onClick={addField}
+          block
+          icon={<PlusOutlined />}
+          style={{ marginTop: 4 }}
+        >
+          Add Property
+        </Button>
+      )}
     </div>
   );
 };

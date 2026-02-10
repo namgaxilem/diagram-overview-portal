@@ -52,6 +52,8 @@ export default function AgentOutputSchemaPage() {
       <OutputSchemaBuilder
         setOutputSchema={setOutputSchema}
         setOutputSchemaEnabled={setOutputSchemaEnabled}
+        // readOnly={true}
+        isAllRequired={true}
         initOutputSchema={JSON.stringify({
           type: 'object',
           properties: {

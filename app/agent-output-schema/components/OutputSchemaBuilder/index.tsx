@@ -29,9 +29,11 @@ interface OutputSchemaBuilderProps {
   setOutputSchema: (schema: string) => void;
   setOutputSchemaEnabled: (enabled: boolean) => void;
   initOutputSchema?: string;
+  readOnly?: boolean;
+  isAllRequired?: boolean;
 }
 
-const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSchema, setOutputSchemaEnabled, initOutputSchema }) => {
+const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSchema, setOutputSchemaEnabled, initOutputSchema, readOnly = false, isAllRequired = false }) => {
   const initialized = useRef(false);
   const [enabled, setEnabled] = useState<boolean>(false);
   const [mode, setMode] = useState<'builder' | 'raw'>('builder');
@@ -55,14 +57,31 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSche
     }
   }, [initOutputSchema]);
 
+  // When readOnly, force enabled to true
+  useEffect(() => {
+    if (readOnly && !enabled) {
+      setEnabled(true);
+    }
+  }, [readOnly, enabled]);
+
+  // Helper: apply isAllRequired to fields recursively
+  const applyAllRequired = useCallback((fieldList: SchemaField[]): SchemaField[] => {
+    return fieldList.map((f) => ({
+      ...f,
+      required: true,
+      properties: f.properties.length > 0 ? applyAllRequired(f.properties) : f.properties,
+    }));
+  }, []);
+
   // Compute JSON schema string from current state
   const computedSchema = useMemo(() => {
     if (!enabled) return '';
 
     if (mode === 'builder') {
-      const hasValidField = fields.some((f) => f.name.trim() !== '');
+      const effectiveFields = isAllRequired ? applyAllRequired(fields) : fields;
+      const hasValidField = effectiveFields.some((f) => f.name.trim() !== '');
       if (!hasValidField) return '';
-      const schema = fieldsToJsonSchema(fields);
+      const schema = fieldsToJsonSchema(effectiveFields);
       return JSON.stringify(schema, null, 2);
     }
 
@@ -74,7 +93,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSche
       }
     }
     return '';
-  }, [enabled, mode, fields, rawSchema]);
+  }, [enabled, mode, fields, rawSchema, isAllRequired, applyAllRequired]);
 
   // Propagate values to parent
   useEffect(() => {
@@ -164,7 +183,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSche
             <Text type="secondary" style={{ fontSize: 13 }}>
               {enabled ? 'Enabled' : 'Disabled'}
             </Text>
-            <Switch checked={enabled} onChange={handleEnabledChange} />
+            <Switch checked={enabled} onChange={handleEnabledChange} disabled={readOnly} />
           </Space>
         </div>
       }
@@ -189,6 +208,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSche
           <Segmented
             value={mode}
             onChange={handleModeChange}
+            disabled={readOnly}
             options={[
               {
                 label: (
@@ -228,7 +248,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSche
                 structured response. Each property has a name, type,
                 optional description, and can be marked as required.
               </Text>
-              <SchemaFieldList fields={fields} onChange={setFields} />
+              <SchemaFieldList fields={fields} onChange={setFields} readOnly={readOnly} isAllRequired={isAllRequired} />
             </div>
           )}
 
@@ -253,6 +273,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ setOutputSche
                 onChange={(e) =>
                   handleRawSchemaChange(e.target.value)
                 }
+                disabled={readOnly}
                 placeholder={`{
   "type": "object",
   "properties": {
