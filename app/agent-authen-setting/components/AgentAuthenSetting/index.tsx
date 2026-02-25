@@ -31,150 +31,84 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
   readOnly = false,
 }) => {
   const [form] = Form.useForm();
-  const [authMethod, setAuthMethod] = useState<'azureAD' | 'forgeRock' | null>(null);
   const [azureGroups, setAzureGroups] = useState<string[]>([]);
+  const [azureADEnabled, setAzureADEnabled] = useState<boolean>(false);
   const [forgeRockClientId, setForgeRockClientId] = useState<string>('');
+  const [forgeRockEnabled, setForgeRockEnabled] = useState<boolean>(false);
 
   // Initialize form values from initSettings
   useEffect(() => {
     const currentSettings = initSettings;
     if (currentSettings) {
       // Update Azure AD
-      if (currentSettings.azureAD?.groups) {
-        setAzureGroups(currentSettings.azureAD.groups);
-        form.setFieldsValue({
-          azureGroups: currentSettings.azureAD.groups,
-        });
-        if (currentSettings.azureAD.enabled) {
-          setAuthMethod('azureAD');
-        }
-      } else {
-        // Clear Azure AD if not present
-        setAzureGroups([]);
-        form.setFieldsValue({
-          azureGroups: undefined,
-        });
-      }
+      const azGroups = currentSettings.azureAD?.groups || [];
+      const azEnabled = currentSettings.azureAD?.enabled || false;
+      setAzureGroups(azGroups);
+      setAzureADEnabled(azEnabled);
+      form.setFieldsValue({
+        azureGroups: azGroups.length > 0 ? azGroups : undefined,
+        azureADEnabled: azEnabled,
+      });
 
       // Update ForgeRock
-      if (currentSettings.forgeRock?.clientId) {
-        setForgeRockClientId(currentSettings.forgeRock.clientId);
-        form.setFieldsValue({
-          forgeRockClientId: currentSettings.forgeRock.clientId,
-        });
-        if (currentSettings.forgeRock.enabled) {
-          setAuthMethod('forgeRock');
-        }
-      } else {
-        // Clear ForgeRock if not present
-        setForgeRockClientId('');
-        form.setFieldsValue({
-          forgeRockClientId: undefined,
-        });
-      }
-
-      // Set auth method based on enabled flag
-      if (currentSettings.azureAD?.enabled) {
-        setAuthMethod('azureAD');
-      } else if (currentSettings.forgeRock?.enabled) {
-        setAuthMethod('forgeRock');
-      } else {
-        setAuthMethod(null);
-      }
+      const frClientId = currentSettings.forgeRock?.clientId || '';
+      const frEnabled = currentSettings.forgeRock?.enabled || false;
+      setForgeRockClientId(frClientId);
+      setForgeRockEnabled(frEnabled);
+      form.setFieldsValue({
+        forgeRockClientId: frClientId || undefined,
+        forgeRockEnabled: frEnabled,
+      });
     } else {
       // Clear everything if no settings
       setAzureGroups([]);
+      setAzureADEnabled(false);
       setForgeRockClientId('');
-      setAuthMethod(null);
+      setForgeRockEnabled(false);
       form.resetFields();
     }
   }, [initSettings]);
 
-  // Handle tab change - update enabled flags when switching tabs
-  const handleTabChange = (activeKey: string) => {
-    if (readOnly) return;
 
-    const newAuthMethod = activeKey as 'azureAD' | 'forgeRock';
-    setAuthMethod(newAuthMethod);
-
-    // Build settings object with updated enabled flags
-    const newSettings: AuthenticationSettings = {};
-
-    if (azureGroups.length > 0) {
-      newSettings.azureAD = {
-        groups: azureGroups,
-        enabled: newAuthMethod === 'azureAD',
-      };
-    }
-
-    if (forgeRockClientId) {
-      newSettings.forgeRock = {
-        clientId: forgeRockClientId,
-        enabled: newAuthMethod === 'forgeRock',
-      };
-    }
-
-    // Notify parent component
-    if (onSettingsChange) {
-      onSettingsChange(newSettings);
-    }
-  };
-
-  // Handle form value changes - only one auth method at a time
+  // Handle form value changes - both auth methods can be enabled independently
   const handleValuesChange = (changedValues: any, allValues: any) => {
     if (readOnly) return;
 
-    const newSettings: AuthenticationSettings = {};
-    let newAuthMethod = authMethod;
-
-    // Check which field changed
+    // Update state based on changed values
     if ('azureGroups' in changedValues) {
-      if (allValues.azureGroups && allValues.azureGroups.length > 0) {
-        // Switch to Azure AD
-        newAuthMethod = 'azureAD';
-        setAuthMethod('azureAD');
-        setAzureGroups(allValues.azureGroups);
-      } else {
-        // Cleared Azure AD groups
-        setAzureGroups([]);
-        if (authMethod === 'azureAD') {
-          newAuthMethod = forgeRockClientId ? 'forgeRock' : null;
-          setAuthMethod(newAuthMethod);
-        }
-      }
+      setAzureGroups(allValues.azureGroups || []);
     }
-
+    if ('azureADEnabled' in changedValues) {
+      setAzureADEnabled(allValues.azureADEnabled || false);
+    }
     if ('forgeRockClientId' in changedValues) {
-      if (allValues.forgeRockClientId && allValues.forgeRockClientId.trim() !== '') {
-        // Switch to ForgeRock
-        newAuthMethod = 'forgeRock';
-        setAuthMethod('forgeRock');
-        setForgeRockClientId(allValues.forgeRockClientId.trim());
-      } else {
-        // Cleared ForgeRock client ID
-        setForgeRockClientId('');
-        if (authMethod === 'forgeRock') {
-          newAuthMethod = azureGroups.length > 0 ? 'azureAD' : null;
-          setAuthMethod(newAuthMethod);
-        }
-      }
+      setForgeRockClientId(allValues.forgeRockClientId?.trim() || '');
+    }
+    if ('forgeRockEnabled' in changedValues) {
+      setForgeRockEnabled(allValues.forgeRockEnabled || false);
     }
 
-    // Build settings object with both values and enabled flags
-    const currentAzureGroups = 'azureGroups' in changedValues ? allValues.azureGroups || [] : azureGroups;
-    const currentForgeRockClientId = 'forgeRockClientId' in changedValues ? (allValues.forgeRockClientId?.trim() || '') : forgeRockClientId;
+    // Build settings object with current values
+    const currentAzureGroups = allValues.azureGroups || azureGroups;
+    const currentAzureADEnabled = allValues.azureADEnabled ?? azureADEnabled;
+    const currentForgeRockClientId = allValues.forgeRockClientId?.trim() || forgeRockClientId;
+    const currentForgeRockEnabled = allValues.forgeRockEnabled ?? forgeRockEnabled;
 
-    if (currentAzureGroups.length > 0) {
+    const newSettings: AuthenticationSettings = {};
+
+    // Always include Azure AD if groups exist or enabled is set
+    if (currentAzureGroups.length > 0 || currentAzureADEnabled) {
       newSettings.azureAD = {
         groups: currentAzureGroups,
-        enabled: newAuthMethod === 'azureAD',
+        enabled: currentAzureADEnabled,
       };
     }
 
-    if (currentForgeRockClientId) {
+    // Always include ForgeRock if clientId exists or enabled is set
+    if (currentForgeRockClientId || currentForgeRockEnabled) {
       newSettings.forgeRock = {
         clientId: currentForgeRockClientId,
-        enabled: newAuthMethod === 'forgeRock',
+        enabled: currentForgeRockEnabled,
       };
     }
 
@@ -189,12 +123,12 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
     {
       key: 'azureAD',
       label: 'Azure AD',
-      children: <AzureADTab azureGroups={azureGroups} authMethod={authMethod} readOnly={readOnly} />,
+      children: <AzureADTab azureGroups={azureGroups} enabled={azureADEnabled} readOnly={readOnly} />,
     },
     {
       key: 'forgeRock',
       label: 'ForgeRock',
-      children: <ForgeRockTab forgeRockClientId={forgeRockClientId} authMethod={authMethod} readOnly={readOnly} />,
+      children: <ForgeRockTab forgeRockClientId={forgeRockClientId} enabled={forgeRockEnabled} readOnly={readOnly} />,
     },
   ];
 
@@ -203,14 +137,14 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
       <Card>
         <Title level={4}>Authentication Settings</Title>
         <Text type="secondary">
-          Configure authentication method for your agent. Only one authentication method can be active at a time.
+          Configure authentication methods for your agent. You can enable both, one, or neither authentication method.
           The agent will enforce authentication based on these settings when running in FastAPI.
         </Text>
-        {authMethod && (
+        {(azureADEnabled || forgeRockEnabled) && (
           <div style={{ marginTop: '12px' }}>
-            <Text strong>
-              Active Method: <Text code>{authMethod === 'azureAD' ? 'Azure AD Groups' : 'ForgeRock OAuth'}</Text>
-            </Text>
+            <Text strong>Active Methods: </Text>
+            {azureADEnabled && <Text code style={{ marginRight: '8px' }}>Azure AD Groups</Text>}
+            {forgeRockEnabled && <Text code>ForgeRock OAuth</Text>}
           </div>
         )}
 
@@ -223,8 +157,7 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
           disabled={readOnly}
         >
           <Tabs
-            activeKey={authMethod || 'azureAD'}
-            onChange={handleTabChange}
+            defaultActiveKey="azureAD"
             items={items}
             type="card"
           />

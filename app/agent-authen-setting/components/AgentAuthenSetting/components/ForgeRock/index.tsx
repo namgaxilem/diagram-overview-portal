@@ -1,17 +1,17 @@
 import React from 'react';
-import { Form, Input, Card, Space, Typography, Divider } from 'antd';
+import { Form, Input, Card, Space, Typography, Divider, Checkbox } from 'antd';
 
 const { Title, Text } = Typography;
 
 interface ForgeRockTabProps {
     forgeRockClientId: string;
-    authMethod: 'azureAD' | 'forgeRock' | null;
+    enabled: boolean;
     readOnly: boolean;
 }
 
 const ForgeRockTab: React.FC<ForgeRockTabProps> = ({
     forgeRockClientId,
-    authMethod,
+    enabled,
     readOnly,
 }) => {
     return (
@@ -22,14 +22,16 @@ const ForgeRockTab: React.FC<ForgeRockTabProps> = ({
                     <Text type="secondary">
                         Configure ForgeRock Client ID for OAuth authentication.
                     </Text>
-                    {authMethod === 'azureAD' && (
-                        <div style={{ marginTop: '8px' }}>
-                            <Text type="warning">
-                                <strong>Note:</strong> Entering a ForgeRock Client ID will disable Azure AD authentication.
-                            </Text>
-                        </div>
-                    )}
                 </div>
+
+                <Form.Item
+                    name="forgeRockEnabled"
+                    valuePropName="checked"
+                >
+                    <Checkbox disabled={readOnly}>
+                        <Text strong>Enable ForgeRock Authentication</Text>
+                    </Checkbox>
+                </Form.Item>
 
                 <Form.Item
                     label="ForgeRock Client ID"

@@ -15,7 +15,7 @@ export default function Page() {
         setSettings(newSettings);
     };
 
-    const handleReset = () => {
+    const handleSetAzureAD = () => {
         setSettings({
             azureAD: {
                 groups: ['Engineering-Team', 'Admin-Group'],
@@ -26,6 +26,19 @@ export default function Page() {
 
     const handleSetForgeRock = () => {
         setSettings({
+            forgeRock: {
+                clientId: 'sample-client-id-12345',
+                enabled: true,
+            },
+        });
+    };
+
+    const handleSetBoth = () => {
+        setSettings({
+            azureAD: {
+                groups: ['Engineering-Team', 'Admin-Group'],
+                enabled: true,
+            },
             forgeRock: {
                 clientId: 'sample-client-id-12345',
                 enabled: true,
@@ -44,7 +57,7 @@ export default function Page() {
                     <Title level={2}>Agent Authentication Setting - Test Page</Title>
                     <Text type="secondary">
                         This page demonstrates the AgentAuthenSetting component with Azure AD and ForgeRock authentication configuration.
-                        Only one authentication method can be active at a time. Both values are persisted with enabled flags.
+                        You can enable both methods, one method, or neither. Both values are persisted with independent enabled flags.
                     </Text>
 
                     <Divider />
@@ -54,13 +67,16 @@ export default function Page() {
                             <Text strong>Controls:</Text>
                             <div style={{ marginTop: '12px' }}>
                                 <Space wrap>
-                                    <Button type="primary" onClick={handleReset}>
-                                        Set Azure AD
+                                    <Button type="primary" onClick={handleSetAzureAD}>
+                                        Enable Azure AD Only
                                     </Button>
                                     <Button onClick={handleSetForgeRock}>
-                                        Set ForgeRock
+                                        Enable ForgeRock Only
                                     </Button>
-                                    <Button onClick={handleClear}>
+                                    <Button type="default" onClick={handleSetBoth}>
+                                        Enable Both
+                                    </Button>
+                                    <Button danger onClick={handleClear}>
                                         Clear All
                                     </Button>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

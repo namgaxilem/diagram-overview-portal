@@ -1,17 +1,17 @@
 import React from 'react';
-import { Form, Select, Card, Space, Typography, Divider } from 'antd';
+import { Form, Select, Card, Space, Typography, Divider, Checkbox } from 'antd';
 
 const { Title, Text } = Typography;
 
 interface AzureADTabProps {
   azureGroups: string[];
-  authMethod: 'azureAD' | 'forgeRock' | null;
+  enabled: boolean;
   readOnly: boolean;
 }
 
 const AzureADTab: React.FC<AzureADTabProps> = ({
   azureGroups,
-  authMethod,
+  enabled,
   readOnly,
 }) => {
   return (
@@ -22,14 +22,16 @@ const AzureADTab: React.FC<AzureADTabProps> = ({
           <Text type="secondary">
             Configure Azure AD groups that are authorized to access this agent.
           </Text>
-          {authMethod === 'forgeRock' && (
-            <div style={{ marginTop: '8px' }}>
-              <Text type="warning">
-                <strong>Note:</strong> Selecting Azure AD will disable ForgeRock authentication.
-              </Text>
-            </div>
-          )}
         </div>
+
+        <Form.Item
+          name="azureADEnabled"
+          valuePropName="checked"
+        >
+          <Checkbox disabled={readOnly}>
+            <Text strong>Enable Azure AD Authentication</Text>
+          </Checkbox>
+        </Form.Item>
 
         <Form.Item
           label="Azure AD Groups"

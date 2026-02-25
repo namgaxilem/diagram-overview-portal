@@ -11,12 +11,13 @@ _fastapi_project_test/
 └── app/
     ├── main/
     │   ├── __init__.py
-    │   ├── main.py              # Main FastAPI application
-    │   ├── auth_azure_ad.py     # Azure AD authentication
-    │   └── auth_forgerock.py    # ForgeRock authentication
+    │   ├── main.py                      # Main FastAPI application
+    │   └── services/
+    │       ├── __init__.py
+    │       └── authen_service.py        # Centralized authentication service
     └── test/
         ├── __init__.py
-        └── test_tokens.py       # Token generation utilities
+        └── test_tokens.py               # Token generation utilities
 ```
 
 ## Setup
@@ -38,15 +39,27 @@ _fastapi_project_test/
 
 ## Authentication Methods
 
+**Both methods can be enabled simultaneously or independently.**
+
 ### Azure AD Groups
 - Validates JWT tokens containing Azure AD group memberships
+- Token format: `Authorization: <token>` (without "Bearer" prefix)
 - Only users in specified groups can access protected endpoints
 - Default allowed groups: `Engineering-Team`, `Admin-Group`
+- Default state: **Enabled**
 
 ### ForgeRock OAuth
-- Validates JWT tokens with ForgeRock Client ID
+- Validates JWT Bearer tokens with ForgeRock Client ID
+- Token format: `Authorization: Bearer <token>` (with "Bearer" prefix)
 - Checks `client_id` or `azp` claim in the token
 - Default client ID: `sample-client-id-12345`
+- Default state: **Disabled**
+
+### Authentication Logic
+- **Bearer token** (starts with "Bearer "): Tries ForgeRock first, falls back to Azure AD if both enabled
+- **Direct token** (no "Bearer" prefix): Tries Azure AD first, falls back to ForgeRock if both enabled
+- If only one method is enabled, only that method is checked
+- If both are disabled, no authentication is required
 
 ## Endpoints
 
@@ -116,24 +129,58 @@ curl -X GET "http://localhost:8000/protected" \
 
 ### Update Authentication Method
 
-**Switch to Azure AD:**
+**Enable Azure AD Only:**
 ```bash
 curl -X POST "http://localhost:8000/config/update" \
   -H "Content-Type: application/json" \
   -d '{
     "azureAD": {
-      "groups": ["Engineering-Team", "Admin-Group"]
+      "groups": ["Engineering-Team", "Admin-Group"],
+      "enabled": true
     }
   }'
 ```
 
-**Switch to ForgeRock:**
+**Enable ForgeRock Only:**
 ```bash
 curl -X POST "http://localhost:8000/config/update" \
   -H "Content-Type: application/json" \
   -d '{
     "forgeRock": {
-      "clientId": "your-client-id"
+      "clientId": "your-client-id",
+      "enabled": true
+    }
+  }'
+```
+
+**Enable Both Methods:**
+```bash
+curl -X POST "http://localhost:8000/config/update" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "azureAD": {
+      "groups": ["Engineering-Team", "Admin-Group"],
+      "enabled": true
+    },
+    "forgeRock": {
+      "clientId": "your-client-id",
+      "enabled": true
+    }
+  }'
+```
+
+**Disable All Authentication:**
+```bash
+curl -X POST "http://localhost:8000/config/update" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "azureAD": {
+      "groups": [],
+      "enabled": false
+    },
+    "forgeRock": {
+      "clientId": "",
+      "enabled": false
     }
   }'
 ```
@@ -150,7 +197,9 @@ curl -X POST "http://localhost:8000/config/update" \
 
 ## Notes
 
-- Only **one authentication method** can be active at a time
+- **Both authentication methods** can be enabled simultaneously
+- The authentication service automatically detects token type based on "Bearer" prefix
 - Tokens are validated but signatures are not verified (for testing purposes)
 - In production, you should verify token signatures with proper keys
 - The configuration is stored in memory and will reset when the server restarts
+- The centralized `authen_service.py` handles all authentication logic for better scalability

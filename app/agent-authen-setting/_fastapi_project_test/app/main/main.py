@@ -1,9 +1,8 @@
-from fastapi import FastAPI, Depends
-from typing import Optional, List
+from fastapi import FastAPI, Depends, Request
+from typing import Optional
 from pydantic import BaseModel
 
-from .auth_azure_ad import create_azure_ad_dependency
-from .auth_forgerock import create_forgerock_dependency
+from .services.authen_service import create_auth_service
 
 app = FastAPI(title="Agent Authentication Test API")
 
@@ -15,19 +14,23 @@ class AuthConfig(BaseModel):
 
 AGENT_AUTH_CONFIG = {
     "azureAD": {
-        "groups": ["Engineering-Team", "Admin-Group"]
+        "groups": ["Engineering-Team", "Admin-Group"],
+        "enabled": True
+    },
+    "forgeRock": {
+        "clientId": "sample-client-id-12345",
+        "enabled": False
     }
 }
 
 
-def get_auth_dependency():
-    if AGENT_AUTH_CONFIG.get("azureAD"):
-        groups = AGENT_AUTH_CONFIG["azureAD"].get("groups", [])
-        return create_azure_ad_dependency(groups)
-    elif AGENT_AUTH_CONFIG.get("forgeRock"):
-        client_id = AGENT_AUTH_CONFIG["forgeRock"].get("clientId", "")
-        return create_forgerock_dependency(client_id)
-    return None
+# Create authentication service instance
+auth_service = create_auth_service(AGENT_AUTH_CONFIG)
+
+
+async def authenticate_request(request: Request):
+    """Dependency for protected endpoints."""
+    return await auth_service.authenticate(request)
 
 
 @app.get("/")
@@ -52,10 +55,10 @@ async def public_endpoint():
 
 
 @app.get("/protected")
-async def protected_endpoint(user: dict = Depends(get_auth_dependency())):
+async def protected_endpoint(auth_result: dict = Depends(authenticate_request)):
     return {
         "message": "This is a protected endpoint - authentication required",
-        "user_info": user,
+        "auth_result": auth_result,
         "status": "success"
     }
 
@@ -63,11 +66,11 @@ async def protected_endpoint(user: dict = Depends(get_auth_dependency())):
 @app.post("/agent/run")
 async def agent_run(
     payload: dict,
-    user: dict = Depends(get_auth_dependency())
+    auth_result: dict = Depends(authenticate_request)
 ):
     return {
         "message": "Agent executed successfully",
-        "user_info": user,
+        "auth_result": auth_result,
         "payload": payload,
         "status": "success"
     }
@@ -75,31 +78,43 @@ async def agent_run(
 
 @app.get("/config")
 async def get_config():
+    enabled_methods = []
+    if AGENT_AUTH_CONFIG.get("azureAD", {}).get("enabled"):
+        enabled_methods.append("azureAD")
+    if AGENT_AUTH_CONFIG.get("forgeRock", {}).get("enabled"):
+        enabled_methods.append("forgeRock")
+    
     return {
         "current_auth_config": AGENT_AUTH_CONFIG,
-        "auth_method": "azureAD" if AGENT_AUTH_CONFIG.get("azureAD") else "forgeRock" if AGENT_AUTH_CONFIG.get("forgeRock") else "none"
+        "enabled_methods": enabled_methods,
+        "authentication_required": auth_service.is_authentication_required()
     }
 
 
 @app.post("/config/update")
 async def update_config(config: AuthConfig):
-    global AGENT_AUTH_CONFIG
+    global AGENT_AUTH_CONFIG, auth_service
     
-    if config.azureAD and config.forgeRock:
-        return {
-            "error": "Only one authentication method can be active at a time",
-            "status": "error"
-        }
-    
+    # Update configuration - both methods can be enabled now
     AGENT_AUTH_CONFIG = {}
     
     if config.azureAD:
         AGENT_AUTH_CONFIG["azureAD"] = config.azureAD
-    elif config.forgeRock:
+    if config.forgeRock:
         AGENT_AUTH_CONFIG["forgeRock"] = config.forgeRock
+    
+    # Recreate auth service with new config
+    auth_service = create_auth_service(AGENT_AUTH_CONFIG)
+    
+    enabled_methods = []
+    if AGENT_AUTH_CONFIG.get("azureAD", {}).get("enabled"):
+        enabled_methods.append("azureAD")
+    if AGENT_AUTH_CONFIG.get("forgeRock", {}).get("enabled"):
+        enabled_methods.append("forgeRock")
     
     return {
         "message": "Configuration updated successfully",
         "new_config": AGENT_AUTH_CONFIG,
+        "enabled_methods": enabled_methods,
         "status": "success"
     }
