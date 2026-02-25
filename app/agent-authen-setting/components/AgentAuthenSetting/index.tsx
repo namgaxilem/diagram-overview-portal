@@ -41,6 +41,7 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
   useEffect(() => {
     const currentSettings = settings || initSettings;
     if (currentSettings) {
+      // Update Azure AD
       if (currentSettings.azureAD?.groups) {
         setAzureGroups(currentSettings.azureAD.groups);
         form.setFieldsValue({
@@ -49,7 +50,15 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
         if (currentSettings.azureAD.enabled) {
           setAuthMethod('azureAD');
         }
+      } else {
+        // Clear Azure AD if not present
+        setAzureGroups([]);
+        form.setFieldsValue({
+          azureGroups: undefined,
+        });
       }
+
+      // Update ForgeRock
       if (currentSettings.forgeRock?.clientId) {
         setForgeRockClientId(currentSettings.forgeRock.clientId);
         form.setFieldsValue({
@@ -58,9 +67,30 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
         if (currentSettings.forgeRock.enabled) {
           setAuthMethod('forgeRock');
         }
+      } else {
+        // Clear ForgeRock if not present
+        setForgeRockClientId('');
+        form.setFieldsValue({
+          forgeRockClientId: undefined,
+        });
       }
+
+      // Set auth method based on enabled flag
+      if (currentSettings.azureAD?.enabled) {
+        setAuthMethod('azureAD');
+      } else if (currentSettings.forgeRock?.enabled) {
+        setAuthMethod('forgeRock');
+      } else {
+        setAuthMethod(null);
+      }
+    } else {
+      // Clear everything if no settings
+      setAzureGroups([]);
+      setForgeRockClientId('');
+      setAuthMethod(null);
+      form.resetFields();
     }
-  }, [initSettings, settings, form]);
+  }, [initSettings, settings]);
 
   // Handle tab change - update enabled flags when switching tabs
   const handleTabChange = (activeKey: string) => {

@@ -7,12 +7,7 @@ import AgentAuthenSetting, { AuthenticationSettings } from './components/AgentAu
 const { Title, Text } = Typography;
 
 export default function Page() {
-    const [settings, setSettings] = useState<AuthenticationSettings>({
-        azureAD: {
-            groups: ['Engineering-Team', 'Admin-Group'],
-            enabled: true,
-        },
-    });
+    const [settings, setSettings] = useState<AuthenticationSettings>({ forgeRock: { clientId: '123', enabled: true } });
     const [readOnly, setReadOnly] = useState(false);
 
     const handleSettingsChange = (newSettings: AuthenticationSettings) => {
