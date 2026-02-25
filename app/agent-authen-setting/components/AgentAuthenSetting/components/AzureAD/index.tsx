@@ -59,20 +59,6 @@ const AzureADTab: React.FC<AzureADTabProps> = ({
             Separate multiple groups with commas or semicolons.
           </Text>
         </div>
-
-        {azureGroups.length > 0 && (
-          <div>
-            <Divider />
-            <Text strong>Current Azure AD Groups ({azureGroups.length}):</Text>
-            <ul style={{ marginTop: '8px' }}>
-              {azureGroups.map((group, index) => (
-                <li key={index}>
-                  <Text code>{group}</Text>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </Space>
     </Card>
   );

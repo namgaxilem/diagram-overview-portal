@@ -21,14 +21,12 @@ export interface AuthenticationSettings {
 
 export interface AgentAuthenSettingProps {
   initSettings?: AuthenticationSettings;
-  settings?: AuthenticationSettings;
   onSettingsChange?: (settings: AuthenticationSettings) => void;
   readOnly?: boolean;
 }
 
 const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
   initSettings,
-  settings,
   onSettingsChange,
   readOnly = false,
 }) => {
@@ -37,9 +35,9 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
   const [azureGroups, setAzureGroups] = useState<string[]>([]);
   const [forgeRockClientId, setForgeRockClientId] = useState<string>('');
 
-  // Initialize form values from initSettings or settings
+  // Initialize form values from initSettings
   useEffect(() => {
-    const currentSettings = settings || initSettings;
+    const currentSettings = initSettings;
     if (currentSettings) {
       // Update Azure AD
       if (currentSettings.azureAD?.groups) {
@@ -90,7 +88,7 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
       setAuthMethod(null);
       form.resetFields();
     }
-  }, [initSettings, settings]);
+  }, [initSettings]);
 
   // Handle tab change - update enabled flags when switching tabs
   const handleTabChange = (activeKey: string) => {

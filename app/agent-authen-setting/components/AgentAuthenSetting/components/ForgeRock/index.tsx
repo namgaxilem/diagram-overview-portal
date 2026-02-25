@@ -55,16 +55,6 @@ const ForgeRockTab: React.FC<ForgeRockTabProps> = ({
                         via ForgeRock OAuth. Ensure this matches your ForgeRock configuration.
                     </Text>
                 </div>
-
-                {forgeRockClientId && (
-                    <div>
-                        <Divider />
-                        <Text strong>Current ForgeRock Client ID:</Text>
-                        <div style={{ marginTop: '8px' }}>
-                            <Text code>{forgeRockClientId}</Text>
-                        </div>
-                    </div>
-                )}
             </Space>
         </Card>
     );
