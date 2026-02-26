@@ -12,6 +12,12 @@ class AuthConfig(BaseModel):
     forgeRock: Optional[dict] = None
 
 
+class AgentRequest(BaseModel):
+    """Request model for agent interactions."""
+    message: str
+    session_id: Optional[str] = None
+
+
 AGENT_AUTH_CONFIG = {
     "azureAD": {
         "groups": ["Engineering-Team", "Admin-Group"],
@@ -65,15 +71,84 @@ async def protected_endpoint(auth_result: dict = Depends(authenticate_request)):
 
 @app.post("/agent/run")
 async def agent_run(
-    payload: dict,
+    request: AgentRequest,
     auth_result: dict = Depends(authenticate_request)
 ):
-    return {
-        "message": "Agent executed successfully",
-        "auth_result": auth_result,
-        "payload": payload,
-        "status": "success"
-    }
+    """
+    Run the ADK agent with the given message.
+    Requires authentication.
+    """
+    try:
+        from .agent import root_agent
+        from google.adk.runners import Runner
+        from google.adk.sessions import InMemorySessionService
+        from google.genai import types
+        
+        # Create session service and runner
+        session_service = InMemorySessionService()
+        runner = Runner(
+            agent=root_agent,
+            app_name="auth_agent_app",
+            session_service=session_service
+        )
+        
+        # Get or create session
+        session_id = request.session_id or "default_session"
+        user_id = auth_result.get("user_info", {}).get("sub", "anonymous")
+        
+        session = session_service.get_session(
+            app_name="auth_agent_app",
+            user_id=user_id,
+            session_id=session_id
+        )
+        
+        if not session:
+            session = session_service.create_session(
+                app_name="auth_agent_app",
+                user_id=user_id,
+                session_id=session_id
+            )
+        
+        # Create user message
+        user_content = types.Content(
+            role="user",
+            parts=[types.Part(text=request.message)]
+        )
+        
+        # Run the agent
+        responses = []
+        async for event in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=user_content
+        ):
+            if hasattr(event, 'content') and event.content:
+                for part in event.content.parts:
+                    if hasattr(part, 'text') and part.text:
+                        responses.append(part.text)
+        
+        return {
+            "message": "Agent executed successfully",
+            "auth_result": auth_result,
+            "agent_response": "\n".join(responses) if responses else "No response generated",
+            "session_id": session_id,
+            "status": "success"
+        }
+    except ImportError as e:
+        return {
+            "message": "ADK not available - install google-adk to use this endpoint",
+            "error": str(e),
+            "auth_result": auth_result,
+            "payload": {"user_message": request.message},
+            "status": "adk_not_available"
+        }
+    except Exception as e:
+        return {
+            "message": "Agent execution failed",
+            "error": str(e),
+            "auth_result": auth_result,
+            "status": "error"
+        }
 
 
 @app.get("/config")
