@@ -28,6 +28,8 @@ def verify_authorization_header(auth_header: str | None) -> dict:
 
     return verify_token_string(token)
 
+
+
 # run.py
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -52,3 +54,35 @@ async def auth_middleware(request: Request, call_next):
         return JSONResponse({"detail": detail}, status_code=status_code)
 
     return await call_next(request)
+
+
+
+## Dán thêm đoạn này vào run.py sau khi tạo app (và trước khi start uvicorn):
+from fastapi.openapi.utils import get_openapi
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    schema = get_openapi(
+        title=app.title or "API",
+        version=app.version or "0.1.0",
+        description=app.description,
+        routes=app.routes,
+    )
+
+    # Add Bearer security scheme
+    schema.setdefault("components", {}).setdefault("securitySchemes", {})
+    schema["components"]["securitySchemes"]["BearerAuth"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",  # hoặc "token"
+    }
+
+    # Apply globally so Swagger shows Authorize + lock on endpoints
+    schema["security"] = [{"BearerAuth": []}]
+
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
