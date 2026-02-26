@@ -39,3 +39,25 @@ for route in list(app.routes):
             name=route.unique_id,
             embed_body_fields=embed,
         )
+
+### middleware/auth_middleware.py
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+EXCLUDE_PREFIXES = ("/docs", "/openapi.json", "/redoc", "/ui", "/static")
+
+@app.middleware("http")
+async def require_bearer(request: Request, call_next):
+    path = request.url.path
+    if path == "/" or path.startswith(EXCLUDE_PREFIXES):
+        return await call_next(request)
+
+    auth = request.headers.get("authorization") or ""
+    if not auth.lower().startswith("bearer "):
+        return JSONResponse({"detail": "Missing Bearer token"}, status_code=401)
+
+    token = auth.split(" ", 1)[1].strip()
+    if token != "MY_SECRET_TOKEN":
+        return JSONResponse({"detail": "Invalid token"}, status_code=401)
+
+    return await call_next(request)        
