@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.6.1",
     "@xyflow/react": "^12.10.0",
     "antd": "^6.2.3",
     "next": "16.1.6",
