@@ -76,6 +76,7 @@ export default function K8sClientPage() {
   const [currentContext,   setCurrentContext]   = useState('');
   const [namespaces,       setNamespaces]       = useState<string[]>([]);
   const [currentNamespace, setCurrentNamespace] = useState('default');
+  const [debouncedNamespace, setDebouncedNamespace] = useState('default');
   const [ctxLoading,       setCtxLoading]       = useState(false);
 
   // resources
@@ -130,7 +131,15 @@ export default function K8sClientPage() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchContexts(); fetchNamespaces(); }, []);
-  useEffect(() => { fetchResources(activeTab, currentNamespace); }, [activeTab, currentNamespace]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedNamespace(currentNamespace);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [currentNamespace]);
+
+  useEffect(() => { fetchResources(activeTab, debouncedNamespace); }, [activeTab, debouncedNamespace]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Action handlers ──────────────────────────────────────────────────────────
 
@@ -146,6 +155,7 @@ export default function K8sClientPage() {
       if (res.ok) {
         setCurrentContext(ctx);
         setCurrentNamespace('default');
+        setDebouncedNamespace('default');
         notifApi.success({ message: `Switched to ${ctx}`, duration: 2 });
         await fetchNamespaces();
         fetchResources(activeTab, 'default');
