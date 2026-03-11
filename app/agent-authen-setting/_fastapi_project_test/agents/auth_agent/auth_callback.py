@@ -11,7 +11,7 @@ from jose import jwt, JWTError
 AGENT_AUTH_CONFIG = {
     "azureAD": {
         "groups": ["Engineering-Team", "Admin-Group"],
-        "enabled": True
+        "enabled": False
     },
     "forgeRock": {
         "clientId": "sample-client-id-12345",
