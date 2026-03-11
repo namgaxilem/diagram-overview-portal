@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+# ============================================================
+# Agent Proxy Configuration
+# ============================================================
+# Map of agent name (URL prefix) → backend base URL.
+# Access pattern: http://localhost:8080/{agentName}/dev-ui/
+#
+# Add more agents as needed:
+#   agent2: http://127.0.0.1:8004
+#   my-workflow: http://my-workflow-service.namespace.svc.cluster.local:8000
+# ============================================================
+agent-proxy:
+  agents:
+    agent1: http://127.0.0.1:8003
+
+logging:
+  level:
+    com.example.agentproxy: DEBUG
+    org.springframework.cloud.gateway: INFO
