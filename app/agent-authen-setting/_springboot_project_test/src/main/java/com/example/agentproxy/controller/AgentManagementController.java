@@ -1,5 +1,6 @@
 package com.example.agentproxy.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,7 @@ import com.example.agentproxy.config.AgentProxyProperties;
 import reactor.core.publisher.Mono;
 
 /**
- * Example "normal" controller that coexists with the ProxyController.
+ * Example "normal" controller that coexists with the AgentProxyController.
  *
  * <p>This represents the other controllers in your real project.
  * They live at their own URL paths and are not affected by the proxy logic.</p>
@@ -32,14 +33,29 @@ public class AgentManagementController {
      */
     @GetMapping("/agents")
     public Mono<List<Map<String, String>>> listAgents() {
-        List<Map<String, String>> agents = properties.getAgents().entrySet().stream()
-                .map(e -> Map.of(
-                        "name", e.getKey(),
-                        "backendUrl", e.getValue(),
-                        "proxyUrl", "/proxy/" + e.getKey() + "/dev-ui/"
+        List<Map<String, String>> result = new ArrayList<>();
+
+        // Agents
+        properties.getAgents().forEach((name, url) ->
+                result.add(Map.of(
+                        "type", "agent",
+                        "name", name,
+                        "backendUrl", url,
+                        "proxyUrl", "/proxy/agent/" + name + "/dev-ui/"
                 ))
-                .toList();
-        return Mono.just(agents);
+        );
+
+        // Workflows
+        properties.getWorkflows().forEach((name, url) ->
+                result.add(Map.of(
+                        "type", "workflow",
+                        "name", name,
+                        "backendUrl", url,
+                        "proxyUrl", "/proxy/workflow/" + name + "/dev-ui/"
+                ))
+        );
+
+        return Mono.just(result);
     }
 
     /**
@@ -50,4 +66,3 @@ public class AgentManagementController {
         return Mono.just(Map.of("status", "UP", "service", "agent-proxy"));
     }
 }
-

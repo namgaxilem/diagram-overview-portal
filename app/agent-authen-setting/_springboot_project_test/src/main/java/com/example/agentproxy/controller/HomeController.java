@@ -12,7 +12,7 @@ import com.example.agentproxy.config.AgentProxyProperties;
 import reactor.core.publisher.Mono;
 
 /**
- * Home page controller – provides a simple HTML overview of available agents.
+ * Home page controller – provides a simple HTML overview of available agents and workflows.
  */
 @RestController
 public class HomeController {
@@ -24,7 +24,7 @@ public class HomeController {
     }
 
     /**
-     * GET / - Renders a simple HTML page listing all available agents
+     * GET / - Renders a simple HTML page listing all available agents and workflows
      * with links to their proxied dev-ui.
      */
     @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
@@ -32,7 +32,14 @@ public class HomeController {
         String agentLinks = properties.getAgents().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> String.format(
-                        "<li><a href=\"/proxy/%s/dev-ui/\">%s</a> → %s</li>",
+                        "<li><a href=\"/proxy/agent/%s/dev-ui/\">🤖 %s</a> → %s</li>",
+                        e.getKey(), e.getKey(), e.getValue()))
+                .collect(Collectors.joining("\n          "));
+
+        String workflowLinks = properties.getWorkflows().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> String.format(
+                        "<li><a href=\"/proxy/workflow/%s/dev-ui/\">⚙️ %s</a> → %s</li>",
                         e.getKey(), e.getKey(), e.getValue()))
                 .collect(Collectors.joining("\n          "));
 
@@ -42,21 +49,24 @@ public class HomeController {
                 <head><title>Agent Proxy Portal</title></head>
                 <body>
                   <h1>🤖 Agent Proxy Portal</h1>
-                  <h2>Available Agents</h2>
+                  <h2>Agents</h2>
+                  <ul>
+                    %s
+                  </ul>
+                  <h2>Workflows</h2>
                   <ul>
                     %s
                   </ul>
                   <hr>
                   <h3>API Endpoints</h3>
                   <ul>
-                    <li><a href="/api/agents">/api/agents</a> – list agents (JSON)</li>
+                    <li><a href="/api/agents">/api/agents</a> – list agents &amp; workflows (JSON)</li>
                     <li><a href="/api/health">/api/health</a> – health check</li>
                   </ul>
                 </body>
                 </html>
-                """.formatted(agentLinks);
+                """.formatted(agentLinks, workflowLinks);
 
         return Mono.just(html);
     }
 }
-

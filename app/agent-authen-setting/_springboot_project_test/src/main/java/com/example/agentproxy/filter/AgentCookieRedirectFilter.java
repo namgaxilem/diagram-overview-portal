@@ -12,7 +12,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
-import com.example.agentproxy.config.AgentProxyProperties;
+import com.example.agentproxy.service.BackendResolverService;
 
 import reactor.core.publisher.Mono;
 
@@ -20,29 +20,26 @@ import reactor.core.publisher.Mono;
  * WebFilter that catches requests OUTSIDE /proxy/** that were triggered by
  * the ADK dev-ui's root-relative asset/API paths (e.g. /dev-ui/static/..., /list-apps).
  *
- * <p>If the request has the X-Agent-Backend cookie, this filter <b>internally rewrites</b>
- * the request path to /proxy/{agentName}/... so the ProxyController handles it
+ * <p>If the request has the X-Agent-Backend-Type and X-Agent-Backend-Name cookies,
+ * this filter <b>internally rewrites</b> the request path to
+ * /proxy/{type}/{name}/... so the AgentProxyController handles it
  * transparently — no browser redirect needed.</p>
- *
- * <p>This is needed because the ADK dev-ui frontend uses absolute paths like
- * {@code /dev-ui/static/js/main.js} which the browser resolves relative to
- * the server root, not relative to /proxy/agent1/.</p>
  */
 @Component
 public class AgentCookieRedirectFilter implements WebFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(AgentCookieRedirectFilter.class);
-    private static final String COOKIE_NAME = "X-Agent-Backend";
+    private static final String COOKIE_TYPE = "X-Agent-Backend-Type";
+    private static final String COOKIE_NAME = "X-Agent-Backend-Name";
 
-    private final AgentProxyProperties properties;
+    private final BackendResolverService resolverService;
 
-    public AgentCookieRedirectFilter(AgentProxyProperties properties) {
-        this.properties = properties;
+    public AgentCookieRedirectFilter(BackendResolverService resolverService) {
+        this.resolverService = resolverService;
     }
 
     @Override
     public int getOrder() {
-        // Run before any other filters
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
@@ -55,35 +52,42 @@ public class AgentCookieRedirectFilter implements WebFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // Check if the cookie is present
-        if (exchange.getRequest().getCookies().containsKey(COOKIE_NAME)) {
-            HttpCookie cookie = exchange.getRequest().getCookies().getFirst(COOKIE_NAME);
-            if (cookie != null) {
-                String agentName = cookie.getValue();
-                // Verify this agent exists in config
-                if (properties.getAgents().containsKey(agentName)) {
-                    // Internal rewrite: /dev-ui/static/foo.js → /proxy/agent1/dev-ui/static/foo.js
-                    String newPath = "/proxy/" + agentName + path;
-                    String query = exchange.getRequest().getURI().getRawQuery();
-                    String newUriStr = newPath + (query != null ? "?" + query : "");
+        // Check if both cookies are present
+        if (exchange.getRequest().getCookies().containsKey(COOKIE_TYPE) &&
+                exchange.getRequest().getCookies().containsKey(COOKIE_NAME)) {
+            HttpCookie typeCookie = exchange.getRequest().getCookies().getFirst(COOKIE_TYPE);
+            HttpCookie nameCookie = exchange.getRequest().getCookies().getFirst(COOKIE_NAME);
+            if (typeCookie != null && nameCookie != null) {
+                String type = typeCookie.getValue();
+                String name = nameCookie.getValue();
 
-                    log.debug("[rewrite-filter] {} → {} (cookie agent={})", path, newPath, agentName);
-
-                    ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                            .uri(URI.create(newUriStr))
-                            .path(newPath)
-                            .build();
-
-                    ServerWebExchange mutatedExchange = exchange.mutate()
-                            .request(mutatedRequest)
-                            .build();
-
-                    return chain.filter(mutatedExchange);
+                // Validate type
+                if (!BackendResolverService.TYPE_AGENT.equals(type) &&
+                        !BackendResolverService.TYPE_WORKFLOW.equals(type)) {
+                    return chain.filter(exchange);
                 }
+
+                // Internal rewrite: /dev-ui/static/foo.js → /proxy/agent/agent1/dev-ui/static/foo.js
+                String newPath = "/proxy/" + type + "/" + name + path;
+                String query = exchange.getRequest().getURI().getRawQuery();
+                String newUriStr = newPath + (query != null ? "?" + query : "");
+
+                log.debug("[rewrite-filter] {} → {} (type={}, name={})", path, newPath, type, name);
+
+                ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                        .uri(URI.create(newUriStr))
+                        .path(newPath)
+                        .build();
+
+                ServerWebExchange mutatedExchange = exchange.mutate()
+                        .request(mutatedRequest)
+                        .build();
+
+                return chain.filter(mutatedExchange);
             }
         }
 
-        // No cookie or unknown agent → let it pass through normally
+        // No cookies or invalid → let it pass through normally
         return chain.filter(exchange);
     }
 }

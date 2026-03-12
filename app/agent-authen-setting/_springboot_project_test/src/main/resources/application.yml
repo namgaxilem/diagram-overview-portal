@@ -4,17 +4,16 @@ server:
 # ============================================================
 # Agent Proxy Configuration
 # ============================================================
-# Map of agent name (URL prefix) → backend base URL.
-# Access pattern: http://localhost:8080/proxy/{agentName}/dev-ui/
-#
-# Add more agents as needed:
-#   agent2: http://127.0.0.1:8004
-#   my-workflow: http://my-workflow-service.namespace.svc.cluster.local:8000
+# Access patterns:
+#   http://localhost:8080/proxy/agent/{name}/dev-ui/
+#   http://localhost:8080/proxy/workflow/{name}/dev-ui/
 # ============================================================
 agent-proxy:
   agents:
     agent1: http://127.0.0.1:8003
     agent2: http://127.0.0.1:8004
+  workflows:
+    workflow1: http://127.0.0.1:9001
 
 logging:
   level:
