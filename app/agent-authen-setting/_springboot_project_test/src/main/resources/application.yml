@@ -18,3 +18,13 @@ agent-proxy:
 logging:
   level:
     com.example.agentproxy: DEBUG
+
+# ============================================================
+# Spring Security – default user for testing
+# ============================================================
+spring:
+  security:
+    user:
+      name: admin
+      password: admin123
+

@@ -32,12 +32,6 @@ public class AgentCookieRedirectFilter implements WebFilter, Ordered {
     private static final String COOKIE_TYPE = "X-Agent-Backend-Type";
     private static final String COOKIE_NAME = "X-Agent-Backend-Name";
 
-    private final BackendResolverService resolverService;
-
-    public AgentCookieRedirectFilter(BackendResolverService resolverService) {
-        this.resolverService = resolverService;
-    }
-
     @Override
     public int getOrder() {
         return Ordered.HIGHEST_PRECEDENCE;
@@ -47,8 +41,9 @@ public class AgentCookieRedirectFilter implements WebFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        // Only intercept requests that are NOT already under /proxy, /, /api
-        if (path.startsWith("/proxy") || path.equals("/") || path.startsWith("/api")) {
+        // Only intercept requests that are NOT already under /proxy, /, /api, /login, /logout
+        if (path.startsWith("/proxy") || path.equals("/") || path.startsWith("/api")
+                || path.startsWith("/login") || path.startsWith("/logout")) {
             return chain.filter(exchange);
         }
 
