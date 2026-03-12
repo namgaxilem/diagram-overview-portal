@@ -156,7 +156,7 @@ def get_auth_status() -> dict:
 # Create the ADK Agent
 root_agent = Agent(
     name="authenticated_agent",
-    model="gemini-2.0-flash",
+    model="gemini-3.1-pro-preview",
     description="An intelligent assistant with authentication support for enterprise use.",
     instruction="""You are a helpful AI assistant with access to various tools.
     
