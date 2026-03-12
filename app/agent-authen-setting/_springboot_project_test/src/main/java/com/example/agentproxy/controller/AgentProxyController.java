@@ -1,56 +1,50 @@
 package com.example.agentproxy.controller;
 
+import java.io.IOException;
 import java.net.URI;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.example.agentproxy.enums.AgentGatewayType;
 import com.example.agentproxy.service.BackendResolverService;
 
-import reactor.core.publisher.Mono;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Reverse proxy controller that routes requests to backend agents or workflows.
+ * Servlet-based reverse proxy controller using WebClient for backend calls.
  *
  * <h3>URL patterns:</h3>
  * <ul>
- *   <li>{@code /proxy/agent/{name}/**}    - proxy to an agent backend</li>
- *   <li>{@code /proxy/workflow/{name}/**}  - proxy to a workflow backend</li>
+ *   <li>{@code /agent-proxy/agent/{id}/**}    – proxy to an agent backend</li>
+ *   <li>{@code /agent-proxy/workflow/{id}/**}  – proxy to a workflow backend</li>
+ *   <li>{@code /agent-proxy/**}                – cookie-based fallback</li>
  * </ul>
  *
- * <h3>How it works:</h3>
- * <ol>
- *   <li>Prefixed request: /proxy/agent/agent1/dev-ui/ strips /proxy/agent/agent1,
- *       resolves backend URL via BackendResolverService, proxies the request,
- *       and sets cookies X-Agent-Backend-Type and X-Agent-Backend-Name.</li>
- *   <li>Cookie fallback: requests under /proxy/** without a type/name prefix
- *       but carrying cookies are proxied to the same backend.</li>
- *   <li>No match: returns 404.</li>
- * </ol>
+ * <p>The proxy prefix is used so internal agent / workflow services
+ * are never directly exposed to the internet.</p>
  */
 @RestController
-@RequestMapping("/proxy")
+@RequestMapping("/agent-proxy")
 public class AgentProxyController {
 
     private static final Logger log = LoggerFactory.getLogger(AgentProxyController.class);
+
     private static final String COOKIE_TYPE = "X-Agent-Backend-Type";
-    private static final String COOKIE_NAME = "X-Agent-Backend-Name";
+    private static final String COOKIE_ID   = "X-Agent-Backend-Id";
 
     private final BackendResolverService resolverService;
     private final WebClient webClient;
@@ -60,171 +54,354 @@ public class AgentProxyController {
         this.webClient = webClient;
     }
 
+    // ─── Global error handler for this controller ────────────────────
+
+    @ExceptionHandler(Exception.class)
+    public void handleError(Exception ex, HttpServletResponse response) throws IOException {
+        log.error("[proxy] Unhandled exception: {}", ex.getMessage(), ex);
+        if (!response.isCommitted()) {
+            response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
+            response.setContentType("text/plain");
+            response.getWriter().write("502 Bad Gateway: " + ex.getMessage());
+        }
+    }
+
     // ─── Agent routes ──────────────────────────────────────────────────
 
-    @RequestMapping("/agent/{name}/**")
-    public Mono<Void> proxyAgent(@PathVariable String name, ServerWebExchange exchange) {
-        String fullPath = exchange.getRequest().getURI().getPath();
-        String prefix = "/proxy/agent/" + name;
-        String strippedPath = fullPath.substring(prefix.length());
+    @RequestMapping("/agent/{id}/**")
+    public void proxyAgent(@PathVariable Long id,
+                           HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        String fullPath = request.getRequestURI();
+        String prefix = "/agent-proxy/agent/" + id;
+        String strippedPath = fullPath.length() > prefix.length()
+                ? fullPath.substring(prefix.length())
+                : "/";
         if (strippedPath.isEmpty()) strippedPath = "/";
-        return proxyByTypeAndName(BackendResolverService.TYPE_AGENT, name, strippedPath, exchange);
+
+        proxyByTypeAndId(AgentGatewayType.AGENT, id, strippedPath, request, response);
     }
 
     // ─── Workflow routes ───────────────────────────────────────────────
 
-    @RequestMapping("/workflow/{name}/**")
-    public Mono<Void> proxyWorkflow(@PathVariable String name, ServerWebExchange exchange) {
-        String fullPath = exchange.getRequest().getURI().getPath();
-        String prefix = "/proxy/workflow/" + name;
-        String strippedPath = fullPath.substring(prefix.length());
+    @RequestMapping("/workflow/{id}/**")
+    public void proxyWorkflow(@PathVariable Long id,
+                              HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        String fullPath = request.getRequestURI();
+        String prefix = "/agent-proxy/workflow/" + id;
+        String strippedPath = fullPath.length() > prefix.length()
+                ? fullPath.substring(prefix.length())
+                : "/";
         if (strippedPath.isEmpty()) strippedPath = "/";
-        return proxyByTypeAndName(BackendResolverService.TYPE_WORKFLOW, name, strippedPath, exchange);
+
+        proxyByTypeAndId(AgentGatewayType.WORKFLOW, id, strippedPath, request, response);
     }
 
     // ─── Cookie fallback ───────────────────────────────────────────────
 
-    /**
-     * Fallback: /proxy/**
-     * Uses cookies to determine backend when no /proxy/agent/{name} or /proxy/workflow/{name} matched.
-     * Handles root-relative paths rewritten by AgentCookieRedirectFilter.
-     */
     @RequestMapping("/**")
-    public Mono<Void> proxyFallback(ServerWebExchange exchange) {
-        ServerHttpRequest request = exchange.getRequest();
-        String fullPath = request.getURI().getPath();
+    public void proxyFallback(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        if (request.getCookies().containsKey(COOKIE_TYPE) &&
-                request.getCookies().containsKey(COOKIE_NAME)) {
-            var typeCookie = request.getCookies().getFirst(COOKIE_TYPE);
-            var nameCookie = request.getCookies().getFirst(COOKIE_NAME);
-            if (typeCookie != null && nameCookie != null) {
-                String type = typeCookie.getValue();
-                String name = nameCookie.getValue();
-                String relativePath = fullPath.substring("/proxy".length());
+        String fullPath = request.getRequestURI();
+        String typeCookie = getCookieValue(request, COOKIE_TYPE);
+        String idCookie   = getCookieValue(request, COOKIE_ID);
+
+        if (typeCookie != null && idCookie != null) {
+            AgentGatewayType type;
+            try {
+                type = AgentGatewayType.valueOf(typeCookie);
+            } catch (IllegalArgumentException e) {
+                log.warn("[proxy] Invalid cookie type: {}", typeCookie);
+                send404(response, "Invalid cookie type");
+                return;
+            }
+
+            Long id;
+            try {
+                id = Long.valueOf(idCookie);
+            } catch (NumberFormatException e) {
+                log.warn("[proxy] Invalid cookie id: {}", idCookie);
+                send404(response, "Invalid cookie id");
+                return;
+            }
+
+            String backendUrl = resolverService.resolve(type, id);
+            if (backendUrl != null) {
+                // strip the /agent-proxy prefix to get the relative path
+                String relativePath = fullPath.substring("/agent-proxy".length());
                 if (relativePath.isEmpty()) relativePath = "/";
 
-                log.debug("[proxy] {} {} -> cookie fallback (type={}, name={})",
-                        request.getMethod(), fullPath, type, name);
+                String typeLower = type.name().toLowerCase();
+                String proxyPrefix = "/agent-proxy/" + typeLower + "/" + id;
 
-                String finalRelativePath = relativePath;
-                String query = request.getURI().getRawQuery();
+                log.debug("[proxy] {} {} -> cookie fallback (type={}, id={})",
+                        request.getMethod(), fullPath, type, id);
 
-                return resolverService.resolve(type, name)
-                        .flatMap(backendUrl -> {
-                            URI targetUri = buildUri(backendUrl, finalRelativePath, query);
-                            String proxyPrefix = "/proxy/" + type + "/" + name;
-                            return doProxy(exchange, targetUri, backendUrl, proxyPrefix);
-                        })
-                        .switchIfEmpty(Mono.defer(() -> {
-                            exchange.getResponse().setStatusCode(HttpStatus.NOT_FOUND);
-                            return exchange.getResponse().setComplete();
-                        }));
+                String query = request.getQueryString();
+                URI targetUri = buildUri(backendUrl, relativePath, query);
+                doProxy(request, response, targetUri, backendUrl, proxyPrefix);
+                return;
             }
         }
 
         log.debug("[proxy] {} {} -> 404 (no match, no cookie)", request.getMethod(), fullPath);
-        exchange.getResponse().setStatusCode(HttpStatus.NOT_FOUND);
-        return exchange.getResponse().setComplete();
+        send404(response, "Proxy: no backend found (no cookie or unknown agent)");
     }
 
     // ─── Core proxy logic ──────────────────────────────────────────────
 
-    private Mono<Void> proxyByTypeAndName(String type, String name, String strippedPath,
-                                           ServerWebExchange exchange) {
-        ServerHttpRequest request = exchange.getRequest();
-        String fullPath = request.getURI().getPath();
-        String query = request.getURI().getRawQuery();
+    private void proxyByTypeAndId(AgentGatewayType type, Long id, String strippedPath,
+                                  HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        return resolverService.resolve(type, name)
-                .flatMap(backendUrl -> {
-                    URI targetUri = buildUri(backendUrl, strippedPath, query);
-                    log.info("[proxy] {} {} -> {} (type={}, name={})",
-                            request.getMethod(), fullPath, targetUri, type, name);
+        String fullPath  = request.getRequestURI();
+        String query     = request.getQueryString();
+        String typeLower = type.name().toLowerCase();
 
-                    exchange.getResponse().addCookie(
-                            ResponseCookie.from(COOKIE_TYPE, type)
-                                    .path("/").httpOnly(true).sameSite("Lax")
-                                    .maxAge(Duration.ofHours(8)).build());
-                    exchange.getResponse().addCookie(
-                            ResponseCookie.from(COOKIE_NAME, name)
-                                    .path("/").httpOnly(true).sameSite("Lax")
-                                    .maxAge(Duration.ofHours(8)).build());
+        String backendUrl = resolverService.resolve(type, id);
+        if (backendUrl == null) {
+            log.warn("[proxy] {} {} -> 404 ({}/{} not found)", request.getMethod(), fullPath, typeLower, id);
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.getWriter().write("Proxy: " + typeLower + "/" + id + " not found");
+            return;
+        }
 
-                    String proxyPrefix = "/proxy/" + type + "/" + name;
-                    return doProxy(exchange, targetUri, backendUrl, proxyPrefix);
-                })
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("[proxy] {} {} -> 404 ({}/{} not found)",
-                            request.getMethod(), fullPath, type, name);
-                    exchange.getResponse().setStatusCode(HttpStatus.NOT_FOUND);
-                    return exchange.getResponse().setComplete();
-                }));
+        URI targetUri = buildUri(backendUrl, strippedPath, query);
+        log.info("[proxy] {} {} -> {} (type={}, id={})",
+                request.getMethod(), fullPath, targetUri, typeLower, id);
+
+        // Set cookies so subsequent root-relative requests (JS/CSS/API) can be routed
+        setCookie(response, COOKIE_TYPE, type.name());
+        setCookie(response, COOKIE_ID, String.valueOf(id));
+
+        String proxyPrefix = "/agent-proxy/" + typeLower + "/" + id;
+        doProxy(request, response, targetUri, backendUrl, proxyPrefix);
     }
 
-    private Mono<Void> doProxy(ServerWebExchange exchange, URI targetUri,
-                                String backendUrl, String proxyPrefix) {
-        ServerHttpRequest incomingRequest = exchange.getRequest();
-        ServerHttpResponse outgoingResponse = exchange.getResponse();
-        HttpMethod method = incomingRequest.getMethod();
+    /**
+     * Execute the proxy call via WebClient and stream the response back.
+     *
+     * <p>Key behaviour for Swagger UI / ADK dev-ui rendering:</p>
+     * <ul>
+     *   <li>Rewrites {@code Location} headers so redirects stay inside the proxy</li>
+     *   <li>For HTML responses, rewrites absolute paths ({@code href="/..."},
+     *       {@code src="/..."}) so the browser fetches them through the proxy prefix</li>
+     *   <li>Forwards cookies from the backend (except our own proxy cookies)</li>
+     * </ul>
+     */
+    private void doProxy(HttpServletRequest request, HttpServletResponse response,
+                         URI targetUri, String backendUrl, String proxyPrefix) throws IOException {
 
+        HttpMethod method = HttpMethod.valueOf(request.getMethod());
+
+        // --- build the outgoing request, copying incoming headers ----
         WebClient.RequestBodySpec requestSpec = webClient.method(method)
                 .uri(targetUri)
-                .headers(headers -> {
-                    headers.putAll(incomingRequest.getHeaders());
-                    headers.remove(HttpHeaders.HOST);
-                    headers.set(HttpHeaders.HOST, targetUri.getHost() +
-                            (targetUri.getPort() > 0 ? ":" + targetUri.getPort() : ""));
-                });
+                .headers(headers -> copyRequestHeaders(request, headers, targetUri));
 
+        // forward body for POST / PUT / PATCH
         WebClient.RequestHeadersSpec<?> headersSpec;
         if (requiresBody(method)) {
-            headersSpec = requestSpec.body(BodyInserters.fromDataBuffers(incomingRequest.getBody()));
+            byte[] body = request.getInputStream().readAllBytes();
+            headersSpec = requestSpec.bodyValue(body);
         } else {
             headersSpec = requestSpec;
         }
 
+        // backend origin for Location rewriting
         URI backendUri = URI.create(backendUrl);
         String backendOrigin = backendUri.getScheme() + "://" + backendUri.getHost()
                 + (backendUri.getPort() > 0 ? ":" + backendUri.getPort() : "");
 
-        return headersSpec.exchangeToMono(clientResponse -> {
-            outgoingResponse.setStatusCode(clientResponse.statusCode());
+        // --- execute & read body inside exchangeToMono to avoid consumption issues ---
+        try {
+            headersSpec.exchangeToMono(clientResponse -> {
+                int status = clientResponse.statusCode().value();
 
-            clientResponse.headers().asHttpHeaders().forEach((headerName, values) -> {
-                if (!headerName.equalsIgnoreCase(HttpHeaders.TRANSFER_ENCODING)) {
-                    outgoingResponse.getHeaders().put(headerName, values);
+                // Read full body inside the exchange function — this is the correct way
+                // to consume the body without leaking or losing data.
+                return clientResponse.bodyToMono(byte[].class)
+                        .defaultIfEmpty(new byte[0])
+                        .map(bodyBytes -> new ProxyResponse(
+                                status,
+                                clientResponse.headers().asHttpHeaders(),
+                                bodyBytes
+                        ));
+            }).doOnNext(proxyResp -> {
+                try {
+                    writeProxyResponse(proxyResp, response, backendOrigin, proxyPrefix, targetUri);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to write proxy response", e);
                 }
-            });
+            }).block();
+        } catch (WebClientRequestException ex) {
+            log.error("[proxy] Backend unreachable: {} -> {}", targetUri, ex.getMessage());
+            if (!response.isCommitted()) {
+                response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
+                response.setContentType("text/plain");
+                response.getWriter().write("502 Bad Gateway: backend unreachable at " + backendUrl);
+            }
+        } catch (Exception ex) {
+            log.error("[proxy] Unexpected error proxying to {}: {}", targetUri, ex.getMessage(), ex);
+            if (!response.isCommitted()) {
+                response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
+                response.setContentType("text/plain");
+                response.getWriter().write("502 Bad Gateway: " + ex.getMessage());
+            }
+        }
+    }
 
-            if (outgoingResponse.getHeaders().containsKey(HttpHeaders.LOCATION)) {
-                List<String> rewritten = new ArrayList<>();
-                for (String loc : outgoingResponse.getHeaders().get(HttpHeaders.LOCATION)) {
-                    rewritten.add(rewriteLocation(loc, backendOrigin, proxyPrefix));
-                }
-                outgoingResponse.getHeaders().put(HttpHeaders.LOCATION, rewritten);
+    /**
+     * Simple record to carry the backend response across the reactive boundary.
+     */
+    private record ProxyResponse(int status, HttpHeaders headers, byte[] body) {}
+
+    /**
+     * Write the backend response to the servlet response on the calling thread.
+     */
+    private void writeProxyResponse(ProxyResponse proxyResp, HttpServletResponse response,
+                                    String backendOrigin, String proxyPrefix, URI targetUri) throws IOException {
+
+        response.setStatus(proxyResp.status());
+
+        // --- copy response headers -----------------------------------
+        String contentType = copyResponseHeaders(proxyResp.headers(), response, backendOrigin, proxyPrefix);
+
+        byte[] body = proxyResp.body();
+
+        log.info("[proxy] Backend {} body size={} for {}",
+                proxyResp.status(), body.length, targetUri);
+
+        if (body.length > 0) {
+            // Rewrite HTML content so root-relative URLs go through the proxy
+            if (isHtml(contentType)) {
+                String html = new String(body, StandardCharsets.UTF_8);
+                html = rewriteHtml(html, proxyPrefix);
+                body = html.getBytes(StandardCharsets.UTF_8);
             }
 
-            return outgoingResponse.writeWith(clientResponse.bodyToFlux(
-                    org.springframework.core.io.buffer.DataBuffer.class));
-        });
+            response.setContentLength(body.length);
+            response.getOutputStream().write(body);
+            response.getOutputStream().flush();
+        }
     }
+
+    // ─── Header helpers ────────────────────────────────────────────────
+
+    private void copyRequestHeaders(HttpServletRequest request, HttpHeaders headers, URI targetUri) {
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            // skip hop-by-hop / problematic headers
+            if (headerName.equalsIgnoreCase(HttpHeaders.HOST)
+                    || headerName.equalsIgnoreCase("connection")
+                    || headerName.equalsIgnoreCase("transfer-encoding")
+                    || headerName.equalsIgnoreCase(HttpHeaders.COOKIE)
+                    || headerName.equalsIgnoreCase(HttpHeaders.ACCEPT_ENCODING)
+                    || headerName.equalsIgnoreCase(HttpHeaders.REFERER)) {
+                continue;
+            }
+            Enumeration<String> values = request.getHeaders(headerName);
+            while (values.hasMoreElements()) {
+                headers.add(headerName, values.nextElement());
+            }
+        }
+
+        // Forward cookies, stripping our own proxy cookies
+        String cleanedCookies = getCleanedCookieHeader(request);
+        if (cleanedCookies != null && !cleanedCookies.isEmpty()) {
+            headers.set(HttpHeaders.COOKIE, cleanedCookies);
+        }
+
+        // Set correct Host header for the backend
+        headers.set(HttpHeaders.HOST, targetUri.getHost()
+                + (targetUri.getPort() > 0 ? ":" + targetUri.getPort() : ""));
+    }
+
+    /**
+     * Copy response headers from backend to the servlet response.
+     *
+     * @return the Content-Type value (for HTML detection), or null
+     */
+    private String copyResponseHeaders(HttpHeaders respHeaders, HttpServletResponse response,
+                                       String backendOrigin, String proxyPrefix) {
+        String contentType = null;
+
+        for (var entry : respHeaders.entrySet()) {
+            String headerName = entry.getKey();
+            // Skip hop-by-hop and content-length (servlet recalculates after HTML rewrite)
+            if (headerName.equalsIgnoreCase(HttpHeaders.TRANSFER_ENCODING)) continue;
+            if (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH)) continue;
+
+            for (String value : entry.getValue()) {
+                if (headerName.equalsIgnoreCase(HttpHeaders.LOCATION)) {
+                    String rewritten = rewriteLocation(value, backendOrigin, proxyPrefix);
+                    log.info("[proxy] Location: {} -> {}", value, rewritten);
+                    response.setHeader(headerName, rewritten);
+                } else if (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE)) {
+                    contentType = value;
+                    response.setHeader(headerName, value);
+                } else if (headerName.equalsIgnoreCase(HttpHeaders.SET_COOKIE)) {
+                    // Forward backend cookies – rewrite path so they stay within proxy prefix
+                    String rewritten = rewriteSetCookiePath(value, proxyPrefix);
+                    response.addHeader(headerName, rewritten);
+                } else {
+                    response.addHeader(headerName, value);
+                }
+            }
+        }
+        return contentType;
+    }
+
+    // ─── Rewrite helpers ───────────────────────────────────────────────
 
     private String rewriteLocation(String location, String backendOrigin, String proxyPrefix) {
         if (location == null || location.isEmpty()) return location;
+        // absolute URL pointing to the backend → rewrite to proxy prefix
         if (location.startsWith(backendOrigin)) {
             String path = location.substring(backendOrigin.length());
-            String rewritten = proxyPrefix + path;
-            log.debug("[proxy] rewrite Location: {} -> {}", location, rewritten);
-            return rewritten;
+            return proxyPrefix + path;
         }
+        // root-relative path → prepend proxy prefix
         if (location.startsWith("/")) {
-            String rewritten = proxyPrefix + location;
-            log.debug("[proxy] rewrite Location: {} -> {}", location, rewritten);
-            return rewritten;
+            return proxyPrefix + location;
         }
         return location;
     }
+
+    /**
+     * Rewrite the {@code Path=} directive in a {@code Set-Cookie} header so
+     * the cookie is scoped to the proxy prefix instead of the backend root.
+     */
+    private String rewriteSetCookiePath(String setCookieValue, String proxyPrefix) {
+        return setCookieValue.replaceAll("(?i)Path\\s*=\\s*/([^;]*)", "Path=" + proxyPrefix + "/$1");
+    }
+
+    /**
+     * Rewrite root-relative paths inside HTML so the browser fetches resources
+     * through the proxy prefix rather than the bare host root.
+     *
+     * <p>This handles common patterns emitted by Swagger UI and Google ADK dev-ui:
+     * {@code href="/..."}, {@code src="/..."}, {@code url(/...)} and
+     * {@code fetch("/...")}.</p>
+     */
+    private String rewriteHtml(String html, String proxyPrefix) {
+        // href="/..." → href="/agent-proxy/agent/1/..."
+        html = html.replaceAll("(href\\s*=\\s*[\"'])/(?!/)", "$1" + proxyPrefix + "/");
+        // src="/..." → src="/agent-proxy/agent/1/..."
+        html = html.replaceAll("(src\\s*=\\s*[\"'])/(?!/)", "$1" + proxyPrefix + "/");
+        // action="/..." → action="/agent-proxy/agent/1/..."
+        html = html.replaceAll("(action\\s*=\\s*[\"'])/(?!/)", "$1" + proxyPrefix + "/");
+        // url: "/..." in JS/JSON (Swagger's configUrl, url, etc.)
+        html = html.replaceAll("(url\\s*[:=]\\s*[\"'])/(?!/)", "$1" + proxyPrefix + "/");
+        return html;
+    }
+
+    private boolean isHtml(String contentType) {
+        return contentType != null && contentType.toLowerCase().contains("text/html");
+    }
+
+    // ─── Other helpers ─────────────────────────────────────────────────
 
     private boolean requiresBody(HttpMethod method) {
         return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
@@ -235,5 +412,44 @@ public class AgentProxyController {
         if (query != null && !query.isEmpty()) builder.query(query);
         return builder.build(true).toUri();
     }
-}
 
+    private void setCookie(HttpServletResponse response, String name, String value) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(8 * 60 * 60);
+        response.addCookie(cookie);
+    }
+
+    private String getCookieValue(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) return null;
+        for (Cookie cookie : request.getCookies()) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
+    private String getCleanedCookieHeader(HttpServletRequest request) {
+        String rawCookie = request.getHeader(HttpHeaders.COOKIE);
+        if (rawCookie == null || rawCookie.isEmpty()) return null;
+
+        StringBuilder sb = new StringBuilder();
+        for (String part : rawCookie.split(";")) {
+            String trimmed = part.trim();
+            if (trimmed.startsWith(COOKIE_TYPE + "=") || trimmed.startsWith(COOKIE_ID + "=")) {
+                continue;
+            }
+            if (!sb.isEmpty()) sb.append("; ");
+            sb.append(trimmed);
+        }
+        return sb.toString();
+    }
+
+    private void send404(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        response.setContentType("text/plain");
+        response.getWriter().write(message);
+    }
+}

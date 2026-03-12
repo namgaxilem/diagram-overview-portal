@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.agentproxy.config.AgentProxyProperties;
 
-import reactor.core.publisher.Mono;
-
 /**
  * Home page controller – provides a simple HTML overview of available agents and workflows.
  */
@@ -28,22 +26,22 @@ public class HomeController {
      * with links to their proxied dev-ui.
      */
     @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
-    public Mono<String> home() {
+    public String home() {
         String agentLinks = properties.getAgents().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> String.format(
-                        "<li><a href=\"/proxy/agent/%s/dev-ui/\">🤖 %s</a> → %s</li>",
+                        "<li><a href=\"/agent-proxy/agent/%d/dev-ui/\">🤖 Agent #%d</a> → %s</li>",
                         e.getKey(), e.getKey(), e.getValue()))
                 .collect(Collectors.joining("\n          "));
 
         String workflowLinks = properties.getWorkflows().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> String.format(
-                        "<li><a href=\"/proxy/workflow/%s/dev-ui/\">⚙️ %s</a> → %s</li>",
+                        "<li><a href=\"/agent-proxy/workflow/%d/dev-ui/\">⚙️ Workflow #%d</a> → %s</li>",
                         e.getKey(), e.getKey(), e.getValue()))
                 .collect(Collectors.joining("\n          "));
 
-        String html = """
+        return """
                 <!DOCTYPE html>
                 <html>
                 <head><title>Agent Proxy Portal</title></head>
@@ -66,7 +64,5 @@ public class HomeController {
                 </body>
                 </html>
                 """.formatted(agentLinks, workflowLinks);
-
-        return Mono.just(html);
     }
 }

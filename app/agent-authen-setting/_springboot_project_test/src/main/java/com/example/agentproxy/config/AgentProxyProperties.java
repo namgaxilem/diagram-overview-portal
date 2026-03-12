@@ -12,16 +12,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <pre>
  * agent-proxy:
  *   agents:
- *     agent1: http://127.0.0.1:8003
- *     agent2: http://127.0.0.1:8004
+ *     1: http://127.0.0.1:8003
+ *     2: http://127.0.0.1:8004
  *   workflows:
- *     workflow1: http://127.0.0.1:9001
- *     workflow2: http://127.0.0.1:9002
+ *     1: http://127.0.0.1:9001
+ *     2: http://127.0.0.1:9002
  * </pre>
  *
  * Access pattern:
- *   http://localhost:8080/proxy/agent/{agentName}/dev-ui/
- *   http://localhost:8080/proxy/workflow/{workflowName}/dev-ui/
+ *   http://localhost:8080/agent-proxy/agent/{id}/dev-ui/
+ *   http://localhost:8080/agent-proxy/workflow/{id}/dev-ui/
  *
  * Cookie fallback: root-relative requests (JS/CSS/API) are routed
  * via the X-Agent-Backend cookie set on first prefixed request.
@@ -30,30 +30,30 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class AgentProxyProperties {
 
     /**
-     * Map of agent name to backend URL.
-     * Key = name (e.g. "agent1"), Value = backend base URL (e.g. "http://127.0.0.1:8003")
+     * Map of agent ID to backend URL.
+     * Key = id (e.g. 1), Value = backend base URL (e.g. "http://127.0.0.1:8003")
      */
-    private Map<String, String> agents = new HashMap<>();
+    private Map<Long, String> agents = new HashMap<>();
 
     /**
-     * Map of workflow name to backend URL.
-     * Key = name (e.g. "workflow1"), Value = backend base URL (e.g. "http://127.0.0.1:9001")
+     * Map of workflow ID to backend URL.
+     * Key = id (e.g. 1), Value = backend base URL (e.g. "http://127.0.0.1:9001")
      */
-    private Map<String, String> workflows = new HashMap<>();
+    private Map<Long, String> workflows = new HashMap<>();
 
-    public Map<String, String> getAgents() {
+    public Map<Long, String> getAgents() {
         return agents;
     }
 
-    public void setAgents(Map<String, String> agents) {
+    public void setAgents(Map<Long, String> agents) {
         this.agents = agents;
     }
 
-    public Map<String, String> getWorkflows() {
+    public Map<Long, String> getWorkflows() {
         return workflows;
     }
 
-    public void setWorkflows(Map<String, String> workflows) {
+    public void setWorkflows(Map<Long, String> workflows) {
         this.workflows = workflows;
     }
 }

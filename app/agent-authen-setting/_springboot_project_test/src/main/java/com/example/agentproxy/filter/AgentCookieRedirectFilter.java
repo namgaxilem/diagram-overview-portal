@@ -1,89 +1,109 @@
 package com.example.agentproxy.filter;
 
-import java.net.URI;
+import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.Ordered;
-import org.springframework.http.HttpCookie;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
 
-import com.example.agentproxy.service.BackendResolverService;
+import com.example.agentproxy.enums.AgentGatewayType;
 
-import reactor.core.publisher.Mono;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 
 /**
- * WebFilter that catches requests OUTSIDE /proxy/** that were triggered by
- * the ADK dev-ui's root-relative asset/API paths (e.g. /dev-ui/static/..., /list-apps).
+ * Servlet Filter that rewrites root-relative paths (e.g. /dev-ui/static/js/main.js)
+ * to /agent-proxy/{type}/{id}/... using an HttpServletRequestWrapper.
  *
- * <p>If the request has the X-Agent-Backend-Type and X-Agent-Backend-Name cookies,
- * this filter <b>internally rewrites</b> the request path to
- * /proxy/{type}/{name}/... so the AgentProxyController handles it
- * transparently — no browser redirect needed.</p>
+ * <p>This runs inside the Spring Security filter chain (before authorization).
+ * By wrapping the request with a new URI, the authorization filter sees /agent-proxy/**
+ * which is permitAll, and DispatcherServlet routes it to AgentProxyController.</p>
  */
-@Component
-public class AgentCookieRedirectFilter implements WebFilter, Ordered {
+public class AgentCookieRedirectFilter implements Filter {
 
     private static final Logger log = LoggerFactory.getLogger(AgentCookieRedirectFilter.class);
     private static final String COOKIE_TYPE = "X-Agent-Backend-Type";
-    private static final String COOKIE_NAME = "X-Agent-Backend-Name";
+    private static final String COOKIE_ID   = "X-Agent-Backend-Id";
 
     @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
-    }
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+                          FilterChain chain) throws IOException, ServletException {
 
-    @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        String path = exchange.getRequest().getURI().getPath();
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        String path = request.getRequestURI();
 
-        // Only intercept requests that are NOT already under /proxy, /, /api, /login, /logout
-        if (path.startsWith("/proxy") || path.equals("/") || path.startsWith("/api")
-                || path.startsWith("/login") || path.startsWith("/logout")) {
-            return chain.filter(exchange);
+        // Only intercept requests that are NOT already under known paths
+        if (path.startsWith("/agent-proxy") || path.equals("/") || path.startsWith("/api")
+                || path.startsWith("/login") || path.startsWith("/logout")
+                || path.startsWith("/error")) {
+            chain.doFilter(servletRequest, servletResponse);
+            return;
         }
 
         // Check if both cookies are present
-        if (exchange.getRequest().getCookies().containsKey(COOKIE_TYPE) &&
-                exchange.getRequest().getCookies().containsKey(COOKIE_NAME)) {
-            HttpCookie typeCookie = exchange.getRequest().getCookies().getFirst(COOKIE_TYPE);
-            HttpCookie nameCookie = exchange.getRequest().getCookies().getFirst(COOKIE_NAME);
-            if (typeCookie != null && nameCookie != null) {
-                String type = typeCookie.getValue();
-                String name = nameCookie.getValue();
+        String typeCookie = getCookieValue(request, COOKIE_TYPE);
+        String idCookie   = getCookieValue(request, COOKIE_ID);
 
-                // Validate type
-                if (!BackendResolverService.TYPE_AGENT.equals(type) &&
-                        !BackendResolverService.TYPE_WORKFLOW.equals(type)) {
-                    return chain.filter(exchange);
+        if (typeCookie != null && idCookie != null) {
+            // Validate that the type is a valid enum value
+            AgentGatewayType type;
+            try {
+                type = AgentGatewayType.valueOf(typeCookie);
+            } catch (IllegalArgumentException e) {
+                chain.doFilter(servletRequest, servletResponse);
+                return;
+            }
+
+            String typeLower = type.name().toLowerCase();
+            String newPath = "/agent-proxy/" + typeLower + "/" + idCookie + path;
+            log.debug("[rewrite-filter] {} -> {} (type={}, id={})", path, newPath, typeLower, idCookie);
+
+            // Wrap request with rewritten URI — continues through same filter chain
+            HttpServletRequest wrappedRequest = new HttpServletRequestWrapper(request) {
+                @Override
+                public String getRequestURI() {
+                    return newPath;
                 }
 
-                // Internal rewrite: /dev-ui/static/foo.js → /proxy/agent/agent1/dev-ui/static/foo.js
-                String newPath = "/proxy/" + type + "/" + name + path;
-                String query = exchange.getRequest().getURI().getRawQuery();
-                String newUriStr = newPath + (query != null ? "?" + query : "");
+                @Override
+                public String getServletPath() {
+                    return newPath;
+                }
 
-                log.debug("[rewrite-filter] {} → {} (type={}, name={})", path, newPath, type, name);
+                @Override
+                public StringBuffer getRequestURL() {
+                    StringBuffer url = new StringBuffer();
+                    url.append(request.getScheme()).append("://")
+                       .append(request.getServerName());
+                    int port = request.getServerPort();
+                    if (port != 80 && port != 443) {
+                        url.append(":").append(port);
+                    }
+                    url.append(newPath);
+                    return url;
+                }
+            };
 
-                ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                        .uri(URI.create(newUriStr))
-                        .path(newPath)
-                        .build();
-
-                ServerWebExchange mutatedExchange = exchange.mutate()
-                        .request(mutatedRequest)
-                        .build();
-
-                return chain.filter(mutatedExchange);
-            }
+            chain.doFilter(wrappedRequest, servletResponse);
+            return;
         }
 
-        // No cookies or invalid → let it pass through normally
-        return chain.filter(exchange);
+        // No cookies or invalid type → pass through
+        chain.doFilter(servletRequest, servletResponse);
+    }
+
+    private String getCookieValue(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() == null) return null;
+        for (Cookie cookie : request.getCookies()) {
+            if (cookieName.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 }
-

@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.agentproxy.config.AgentProxyProperties;
 
-import reactor.core.publisher.Mono;
-
 /**
  * Example "normal" controller that coexists with the AgentProxyController.
  *
@@ -32,37 +30,37 @@ public class AgentManagementController {
      * GET /api/agents - List all registered agents and their backends.
      */
     @GetMapping("/agents")
-    public Mono<List<Map<String, String>>> listAgents() {
+    public List<Map<String, String>> listAgents() {
         List<Map<String, String>> result = new ArrayList<>();
 
         // Agents
-        properties.getAgents().forEach((name, url) ->
+        properties.getAgents().forEach((id, url) ->
                 result.add(Map.of(
                         "type", "agent",
-                        "name", name,
+                        "id", String.valueOf(id),
                         "backendUrl", url,
-                        "proxyUrl", "/proxy/agent/" + name + "/dev-ui/"
+                        "proxyUrl", "/agent-proxy/agent/" + id + "/dev-ui/"
                 ))
         );
 
         // Workflows
-        properties.getWorkflows().forEach((name, url) ->
+        properties.getWorkflows().forEach((id, url) ->
                 result.add(Map.of(
                         "type", "workflow",
-                        "name", name,
+                        "id", String.valueOf(id),
                         "backendUrl", url,
-                        "proxyUrl", "/proxy/workflow/" + name + "/dev-ui/"
+                        "proxyUrl", "/agent-proxy/workflow/" + id + "/dev-ui/"
                 ))
         );
 
-        return Mono.just(result);
+        return result;
     }
 
     /**
      * GET /api/health - Simple health check endpoint.
      */
     @GetMapping("/health")
-    public Mono<Map<String, String>> health() {
-        return Mono.just(Map.of("status", "UP", "service", "agent-proxy"));
+    public Map<String, String> health() {
+        return Map.of("status", "UP", "service", "agent-proxy");
     }
 }

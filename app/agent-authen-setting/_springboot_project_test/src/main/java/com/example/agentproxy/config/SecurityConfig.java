@@ -2,44 +2,38 @@ package com.example.agentproxy.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.example.agentproxy.filter.AgentCookieRedirectFilter;
 
 /**
- * Security configuration for the Agent Proxy application.
+ * Security configuration (Servlet / Spring MVC mode).
  *
- * <h3>Access rules:</h3>
- * <ul>
- *   <li>{@code /proxy/**} — <b>permitAll</b> (no authentication required).
- *       The proxy controller must be accessible without login so that
- *       backend agents/workflows can be reached freely.</li>
- *   <li>{@code /api/health} — <b>permitAll</b> (health check for monitoring).</li>
- *   <li>Everything else ({@code /}, {@code /api/**}, etc.) — <b>authenticated</b>
- *       (requires login via HTTP Basic or form login).</li>
- * </ul>
+ * <p>AgentCookieRedirectFilter is inserted BEFORE UsernamePasswordAuthenticationFilter
+ * so that root-relative requests (e.g. /dev-ui/static/js/main.js) get their URI
+ * rewritten to /agent-proxy/{type}/{id}/... BEFORE authorization is evaluated.
+ * Since /agent-proxy/** is permitAll, the wrapped request passes through.</p>
  */
 @Configuration
-@EnableWebFluxSecurity
+@EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.addFilterBefore(new AgentCookieRedirectFilter(), UsernamePasswordAuthenticationFilter.class);
+
         return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .authorizeExchange(exchanges -> exchanges
-                        // Proxy endpoints — open, no auth required
-                        .pathMatchers("/proxy/**").permitAll()
-                        // Health check — open
-                        .pathMatchers("/api/health").permitAll()
-                        // Everything else requires authentication
-                        .anyExchange().authenticated()
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/agent-proxy/**").permitAll()
+                        .requestMatchers("/api/health").permitAll()
+                        .anyRequest().authenticated()
                 )
-                // Enable HTTP Basic auth (good for API / Postman testing)
                 .httpBasic(httpBasic -> {})
-                // Enable form login (good for browser access)
                 .formLogin(formLogin -> {})
                 .build();
     }
 }
-
