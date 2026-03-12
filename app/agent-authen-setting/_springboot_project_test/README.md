@@ -15,36 +15,75 @@ Spring Boot WebFlux application that acts as a **reverse proxy** to backend ADK 
 │  └──────────────────┘   └──────────────────────────┘   │
 │                                                         │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │              ProxyController                      │   │
+│  │              AgentCookieRedirectFilter             │   │
+│  │  Intercepts root-relative paths (/static/*, /api/*)│   │
+│  │  Reads cookie → rewrites to /proxy/{agent}/...     │   │
+│  └──────────────────┬─────────────────────────────────┘   │
+│                     │                                     │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │              AgentProxyController                  │   │
 │  │  /proxy/{agentName}/** → backend agent            │   │
-│  │  Cookie fallback for root-relative paths          │   │
-│  └──────────┬───────────────┬───────────────────────┘   │
-│             │               │                           │
-└─────────────┼───────────────┼───────────────────────────┘
-              │               │
-              ▼               ▼
-     ┌────────────┐  ┌────────────┐
-     │ Agent 1    │  │ Agent 2    │
-     │ :8003      │  │ :8004      │
-     │ /dev-ui/   │  │ /dev-ui/   │
-     └────────────┘  └────────────┘
+│  │  Strips prefix → forwards to backend              │   │
+│  └──────────────────┬─────────────────────────────────┘   │
+│                     │                                     │
+└─────────────────────┼─────────────────────────────────────┘
+                      │
+                      ▼
+             ┌────────────┐  ┌────────────┐
+             │ Agent 1    │  │ Agent 2    │
+             │ :8003      │  │ :8004      │
+             │ /dev-ui/   │  │ /dev-ui/   │
+             └────────────┘  └────────────┘
 ```
 
 ### How cookie-based routing works
 
-1. **Prefixed request**: `GET /proxy/agent1/dev-ui/` → strips `/proxy/agent1`, proxies to `http://127.0.0.1:8003/dev-ui/`, sets cookie `X-Agent-Backend=agent1`
-2. **Cookie fallback**: JS loads `/proxy/static/foo.js` (root-relative) → cookie is sent → proxy reads cookie → routes to `http://127.0.0.1:8003/static/foo.js`
-3. **WebSocket/SSE**: browser sends cookie with upgrade request → proxy routes correctly
+#### Step 1: Initial Access (Prefixed Request)
+```
+Browser: GET /proxy/agent1/dev-ui/
+↓
+AgentCookieRedirectFilter: Skips (already has /proxy prefix)
+↓
+AgentProxyController: Strips "/proxy/agent1" → GET /dev-ui/
+↓
+Proxy to: http://127.0.0.1:8003/dev-ui/
+↓
+Response: Sets cookie X-Agent-Backend=agent1
+```
+
+#### Step 2: Root-relative Asset Requests
+```
+Browser: GET /static/js/main.js (with cookie)
+↓
+AgentCookieRedirectFilter: Intercepts
+├─ Reads cookie: X-Agent-Backend=agent1
+└─ Rewrites to: /proxy/agent1/static/js/main.js
+↓
+AgentProxyController: Strips "/proxy/agent1" → GET /static/js/main.js
+↓
+Proxy to: http://127.0.0.1:8003/static/js/main.js
+```
+
+#### Step 3: API Calls & WebSocket
+```
+Browser: POST /api/chat (with cookie)
+↓
+AgentCookieRedirectFilter: Rewrites → /proxy/agent1/api/chat
+↓
+AgentProxyController: Strips prefix → POST /api/chat
+↓
+Proxy to: http://127.0.0.1:8003/api/chat
+```
 
 ### URL Mapping
 
-| You access                                   | Proxied to / Response              |
-|----------------------------------------------|------------------------------------|
-| `http://localhost:8080/`                     | Home page (list of agents)         |
-| `http://localhost:8080/api/agents`           | JSON list of agents                |
-| `http://localhost:8080/api/health`           | Health check endpoint              |
-| `http://localhost:8080/proxy/agent1/dev-ui/` | `http://127.0.0.1:8003/dev-ui/`   |
-| `http://localhost:8080/proxy/agent2/dev-ui/` | `http://127.0.0.1:8004/dev-ui/`   |
+| Original Request | Filter Action | Controller Action | Backend Request |
+|------------------|---------------|-------------------|-----------------|
+| `/proxy/agent1/dev-ui/` | Skip (already prefixed) | Strip `/proxy/agent1` | `GET /dev-ui/` |
+| `/static/js/main.js` | Rewrite → `/proxy/agent1/static/js/main.js` | Strip `/proxy/agent1` | `GET /static/js/main.js` |
+| `/api/chat` | Rewrite → `/proxy/agent1/api/chat` | Strip `/proxy/agent1` | `POST /api/chat` |
+| `/` | Skip (home) | HomeController | HTML page |
+| `/api/agents` | Skip (API) | AgentManagementController | JSON list |
 
 ### Limitation
 
@@ -61,10 +100,23 @@ src/main/java/com/example/agentproxy/
 ├── controller/
 │   ├── HomeController.java                 # GET / – HTML landing page
 │   ├── AgentManagementController.java      # GET /api/agents, /api/health
-│   └── ProxyController.java                # /proxy/** – reverse proxy
-└── filter/
-    └── AgentCookieRedirectFilter.java      # Rewrites root-relative paths → /proxy/{agent}/...
+│   └── AgentProxyController.java           # /proxy/** – reverse proxy logic
+├── filter/
+│   └── AgentCookieRedirectFilter.java      # Rewrites root-relative paths
+├── service/
+│   └── BackendResolverService.java         # Agent URL resolution
+└── enums/
+    └── AgentGatewayType.java               # Gateway type constants
 ```
+
+### Component Responsibilities
+
+| Component | Role | Key Logic |
+|-----------|------|-----------|
+| **AgentCookieRedirectFilter** | Path rewriting | Intercepts `/static/*`, `/api/*` → rewrites to `/proxy/{agent}/...` |
+| **AgentProxyController** | Actual proxying | Handles `/proxy/{agent}/**` → strips prefix → forwards to backend |
+| **BackendResolverService** | Agent discovery | Maps agent names → backend URLs from configuration |
+| **WebClientConfig** | HTTP client | Configures WebClient for proxy requests |
 
 ## Prerequisites
 
@@ -113,11 +165,16 @@ cd ../_springboot_project_test
 1. **Copy** these files:
    - `AgentProxyProperties.java`
    - `WebClientConfig.java`
-   - `ProxyController.java`
+   - `AgentProxyController.java`
    - `AgentCookieRedirectFilter.java`
+   - `BackendResolverService.java`
+   - `AgentGatewayType.java`
 
 2. **Add** the `agent-proxy.agents` section to your `application.yml`.
 
 3. **Add** `@EnableConfigurationProperties(AgentProxyProperties.class)` to your main class.
 
-4. Your existing controllers (`@RestController` at `/api/users`, etc.) will **not be affected** because the proxy lives under `/proxy/**`.
+4. Your existing controllers (`@RestController` at `/api/users`, etc.) will **not be affected** because:
+   - Filter skips `/api/*` paths (your existing endpoints)
+   - Proxy lives under `/proxy/**` path
+   - Only root-relative paths from dev-UI get intercepted
