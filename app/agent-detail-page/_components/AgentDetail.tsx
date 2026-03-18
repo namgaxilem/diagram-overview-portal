@@ -1,22 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-
-type TabId = 'overview' | 'tools' | 'config' | 'voice' | 'remote' | 'output' | 'policy' | 'security';
+import { Tabs, Button } from 'antd';
+import type { TabsProps } from 'antd';
 
 export default function AgentDetail() {
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
-
-  const tabs = [
-    { id: 'overview' as TabId, label: 'Overview' },
-    { id: 'tools' as TabId, label: 'Tools' },
-    { id: 'config' as TabId, label: 'Agent Config' },
-    { id: 'voice' as TabId, label: 'Voice Settings' },
-    { id: 'remote' as TabId, label: 'Remote A2A' },
-    { id: 'output' as TabId, label: 'Output Schema' },
-    { id: 'policy' as TabId, label: 'Policy Config' },
-    { id: 'security' as TabId, label: 'Security' },
-  ];
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden relative">
@@ -119,34 +108,43 @@ export default function AgentDetail() {
       </section>
 
       {/* Tab Navigation */}
-      <nav className="flex border-b border-gray-200 bg-white">
-        <div className="flex flex-1 overflow-x-auto px-6 hide-scrollbar">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-brand-green text-brand-green'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+      <div className="bg-white border-b border-gray-200">
+        <div className="flex items-center">
+          <div className="flex-1 px-6">
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              items={[
+                { key: 'overview', label: 'Overview' },
+                { key: 'tools', label: 'Tools' },
+                { key: 'config', label: 'Agent Config' },
+                { key: 'voice', label: 'Voice Settings' },
+                { key: 'remote', label: 'Remote A2A' },
+                { key: 'output', label: 'Output Schema' },
+                { key: 'policy', label: 'Policy Config' },
+                { key: 'security', label: 'Security' },
+              ]}
+              tabBarStyle={{ marginBottom: 0 }}
+            />
+          </div>
+          <div className="px-6 flex items-center gap-3 border-l border-gray-100 shrink-0">
+            <Button type="text" className="text-gray-600 hover:text-gray-900">
+              Discard
+            </Button>
+            <Button 
+              type="primary" 
+              icon={
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                </svg>
+              }
+              className="bg-brand-green hover:bg-brand-green/90"
             >
-              {tab.label}
-            </button>
-          ))}
+              Save Changes
+            </Button>
+          </div>
         </div>
-        <div className="px-6 flex items-center gap-3 border-l border-gray-100 bg-white">
-          <button className="px-4 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-            Discard
-          </button>
-          <button className="flex items-center gap-2 px-5 py-1.5 bg-brand-green text-white rounded-lg text-sm font-medium hover:bg-brand-green/90 shadow-sm transition-all">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-            </svg>
-            Save Changes
-          </button>
-        </div>
-      </nav>
+      </div>
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
