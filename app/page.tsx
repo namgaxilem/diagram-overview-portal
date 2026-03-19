@@ -1,8 +1,3 @@
-import Header from "./components/Header";
-import Hero from "./components/Hero";
-import SystemArchitecture from "./components/SystemArchitecture";
-import Features from "./components/Features";
-import Footer from "./components/Footer";
 import { Card, Button } from "antd";
 import Link from "next/link";
 
@@ -37,56 +32,51 @@ export default function Home() {
       path: "/agent-policy-config-builder",
       title: "Agent Policy Config Builder",
       description: "Policy configuration builder for agent behavior and governance rules"
+    },
+    {
+      path: "/registry-landing",
+      title: "Registry Landing Page",
+      description: "Project overview, architecture diagram, and features showcase"
     }
   ];
 
   return (
-    <main className="min-h-screen">
-      <Header />
-      <Hero />
-      
-      {/* Navigation Section */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">
-            Available Pages & Features
-          </h2>
-          <p className="block text-center text-gray-600 mb-12">
-            Explore all the available tools and interfaces in the DHP AI Experience Hub
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {routes.map((route) => (
-              <Card
-                key={route.path}
-                hoverable
-                className="h-full"
-                actions={[
-                  <Link href={route.path} key="navigate">
-                    <Button type="primary" block>
-                      Open Page
-                    </Button>
-                  </Link>
-                ]}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">{route.title}</h3>
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {route.path}
-                    </code>
-                  </div>
-                  <p className="text-gray-600">{route.description}</p>
+    <main className="min-h-screen bg-gray-50 py-16 px-4">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-4">
+          DHP AI Experience Hub
+        </h1>
+        <p className="text-center text-gray-600 mb-12">
+          Select a tool or interface to navigate to
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {routes.map((route) => (
+            <Card
+              key={route.path}
+              hoverable
+              className="h-full"
+              actions={[
+                <Link href={route.path} key="navigate">
+                  <Button type="primary" block>
+                    Open Page
+                  </Button>
+                </Link>
+              ]}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">{route.title}</h3>
+                  <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                    {route.path}
+                  </code>
                 </div>
-              </Card>
-            ))}
-          </div>
+                <p className="text-gray-600">{route.description}</p>
+              </div>
+            </Card>
+          ))}
         </div>
-      </section>
-
-      <SystemArchitecture />
-      <Features />
-      <Footer />
+      </div>
     </main>
   );
 }

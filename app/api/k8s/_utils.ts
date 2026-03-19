@@ -20,7 +20,7 @@ export function kubectl(
       'kubectl',
       args,
       {
-        maxBuffer: options?.maxBuffer ?? 10 * 1024 * 1024,
+        maxBuffer: options?.maxBuffer ?? 50 * 1024 * 1024, // 50MB default
         timeout: options?.timeout ?? 30000,
       },
       (error, stdout, stderr) => {
