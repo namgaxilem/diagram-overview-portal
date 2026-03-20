@@ -11,8 +11,9 @@ import {
   Alert,
   Divider,
   Tag,
+  Button,
 } from 'antd';
-import { CheckCircleOutlined, CodeOutlined, ToolOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CodeOutlined, ToolOutlined, CloudDownloadOutlined } from '@ant-design/icons';
 import SchemaFieldList from './SchemaFieldList';
 import {
   SchemaField,
@@ -33,6 +34,7 @@ interface OutputSchemaBuilderProps {
   initialEnabled?: boolean; // Initial enabled state from parent
   readOnly?: boolean;
   isAllRequired?: boolean;
+  onFetchSchema?: (prompt: string) => Promise<string> | void; // Callback to fetch/generate schema from API
 }
 
 const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ 
@@ -42,7 +44,8 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
   initOutputSchema,
   initialEnabled = false,
   readOnly = false, 
-  isAllRequired = false 
+  isAllRequired = false,
+  onFetchSchema,
 }) => {
   const initialized = useRef(false);
   const [enabled, setEnabled] = useState<boolean>(initialEnabled);
@@ -54,6 +57,8 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
   const [builderDisabled, setBuilderDisabled] = useState<boolean>(false);
   const [builderDisabledReason, setBuilderDisabledReason] = useState<string>('');
   const [rawValueInvalid, setRawValueInvalid] = useState<boolean>(false);
+  const [isFetchingSchema, setIsFetchingSchema] = useState<boolean>(false);
+  const [fetchPrompt, setFetchPrompt] = useState<string>('');
 
   // Initialize from value or initOutputSchema on first mount
   useEffect(() => {
@@ -265,6 +270,25 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
     setEnabled(checked);
   }, []);
 
+  // Handle fetch schema from API
+  const handleFetchSchema = useCallback(async () => {
+    if (!onFetchSchema) return;
+    
+    setIsFetchingSchema(true);
+    setRawError(undefined);
+    
+    try {
+      const fetchedSchema = await onFetchSchema(fetchPrompt);
+      if (fetchedSchema) {
+        handleRawSchemaChange(fetchedSchema);
+      }
+    } catch (error) {
+      setRawError(`Failed to fetch schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsFetchingSchema(false);
+    }
+  }, [onFetchSchema, fetchPrompt, handleRawSchemaChange]);
+
   return (
     <Card
       title={
@@ -379,6 +403,26 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
                 gap: 8,
               }}
             >
+              {onFetchSchema && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Input.TextArea
+                    value={fetchPrompt}
+                    onChange={(e) => setFetchPrompt(e.target.value)}
+                    placeholder="Enter a prompt to generate schema... (e.g., Create a schema for user profile with name, email, age)"
+                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    disabled={readOnly || isFetchingSchema}
+                  />
+                  <Button
+                    icon={<CloudDownloadOutlined />}
+                    loading={isFetchingSchema}
+                    onClick={handleFetchSchema}
+                    disabled={readOnly || isFetchingSchema || !fetchPrompt.trim()}
+                    style={{ alignSelf: 'flex-start' }}
+                  >
+                    Generate Schema
+                  </Button>
+                </div>
+              )}
               <TextArea
                 value={rawSchema}
                 onChange={(e) =>

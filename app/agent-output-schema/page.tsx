@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button, Typography, Card, message } from 'antd';
 import { CopyOutlined, EyeOutlined } from '@ant-design/icons';
+import axios from 'axios';
 import OutputSchemaBuilder from './components/OutputSchemaBuilder';
 
 const { Title, Text } = Typography;
@@ -11,6 +12,24 @@ export default function AgentOutputSchemaPage() {
   const [outputSchema, setOutputSchema] = useState<string>('');
   const [outputSchemaEnabled, setOutputSchemaEnabled] = useState<boolean>(true);
   const [schemaOutput, setSchemaOutput] = useState<string>('');
+
+  // Fetch schema from API
+  const handleFetchSchema = async (prompt: string): Promise<string> => {
+    try {
+      // Replace this URL with your actual API endpoint
+      // Pass prompt to the API (e.g., as query param or in request body)
+      const response = await axios.post('/api/schema/generate', { prompt });
+      // If response is already a string, return it; otherwise stringify it
+      const schemaData = response.data;
+      if (typeof schemaData === 'string') {
+        return schemaData;
+      }
+      return JSON.stringify(schemaData, null, 2);
+    } catch (error) {
+      // Re-throw error to be handled by the component
+      throw error;
+    }
+  };
 
   const handleGetSchema = () => {
     if (!outputSchemaEnabled) {
@@ -53,6 +72,7 @@ export default function AgentOutputSchemaPage() {
         setOutputSchema={setOutputSchema}
         setOutputSchemaEnabled={setOutputSchemaEnabled}
         initialEnabled={outputSchemaEnabled}
+        onFetchSchema={handleFetchSchema}
         // readOnly={true}
         isAllRequired={true}
         initOutputSchema={JSON.stringify({
