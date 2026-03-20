@@ -29,6 +29,11 @@ export default function Home() {
       description: "Visual builder for defining agent output schemas with JSON preview"
     },
     {
+      path: "/agent-output-schema-v2",
+      title: "Agent Output Schema Builder V2",
+      description: "Advanced JSON schema builder using Ginkgo Bioworks Form Builder"
+    },
+    {
       path: "/agent-policy-config-builder",
       title: "Agent Policy Config Builder",
       description: "Policy configuration builder for agent behavior and governance rules"
