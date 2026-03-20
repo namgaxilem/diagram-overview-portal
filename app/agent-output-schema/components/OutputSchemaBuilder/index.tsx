@@ -182,21 +182,11 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
   }, []);
 
   // Compute JSON schema string from current state
+  // Raw is the single source of truth - always return rawSchema
   const computedSchema = useMemo(() => {
     if (!enabled) return '';
-
-    if (mode === 'builder') {
-      const effectiveFields = isAllRequired ? applyAllRequired(fields) : fields;
-      const hasValidField = effectiveFields.some((f) => f.name.trim() !== '');
-      if (!hasValidField) return '';
-      const schema = fieldsToJsonSchema(effectiveFields, schemaMetadata);
-      return JSON.stringify(schema, null, 2);
-    }
-
-    // In raw mode, return the raw input (even if invalid - raw is source of truth)
-    // User can save any value, validation is just a warning
     return rawSchema.trim();
-  }, [enabled, mode, fields, rawSchema, isAllRequired, applyAllRequired, schemaMetadata]);
+  }, [enabled, rawSchema]);
 
   // Propagate values to parent
   useEffect(() => {
@@ -204,7 +194,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
     setOutputSchema(enabled ? computedSchema : '');
   }, [enabled, computedSchema, setOutputSchema, setOutputSchemaEnabled]);
 
-  // Handle mode switch
+  // Handle mode switch - NEVER modify rawSchema when switching tabs
   const handleModeChange = useCallback(
     (value: string | number) => {
       const newMode = value as 'builder' | 'raw';
@@ -214,27 +204,19 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
         return;
       }
 
-      if (newMode === 'raw' && mode === 'builder') {
-        // Builder → Raw: populate raw editor with current schema
-        const hasValidField = fields.some((f) => f.name.trim() !== '');
-        if (hasValidField) {
-          const schema = fieldsToJsonSchema(fields, schemaMetadata);
-          setRawSchema(JSON.stringify(schema, null, 2));
-          setRawError(undefined);
-        } else {
-          setRawSchema('');
-          setRawError(undefined);
-        }
-      } else if (newMode === 'builder' && mode === 'raw') {
-        // Raw → Builder: try to parse raw schema into fields
-        if (rawSchema.trim()) {
+      if (newMode === 'builder' && mode === 'raw') {
+        // Raw → Builder: parse raw into fields (but do NOT modify raw)
+        if (!rawValueInvalid && rawSchema.trim()) {
           const result = validateJsonSchema(rawSchema);
           if (result.valid && result.schema) {
             try {
-              const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
-              setSchemaMetadata(metadata);
-              if (parsed.length > 0) {
-                setFields(parsed);
+              const canHandle = canVisualBuilderHandleSchema(result.schema);
+              if (canHandle) {
+                const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
+                setSchemaMetadata(metadata);
+                if (parsed.length > 0) {
+                  setFields(parsed);
+                }
               }
             } catch {
               // If parsing fails, keep current builder fields
@@ -242,10 +224,11 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
           }
         }
       }
+      // Builder → Raw: just switch, raw already has latest value
 
       setMode(newMode);
     },
-    [mode, fields, rawSchema, builderDisabled]
+    [mode, rawSchema, rawValueInvalid, builderDisabled, canVisualBuilderHandleSchema]
   );
 
   // Handle raw schema text change - raw JSON is source of truth
@@ -255,16 +238,56 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
       const result = validateJsonSchema(value);
       setRawError(result.valid ? undefined : result.error);
       setRawValueInvalid(!result.valid);
+      
+      if (result.valid && result.schema) {
+        // Valid JSON - check if visual builder can handle it
+        try {
+          const canHandle = canVisualBuilderHandleSchema(result.schema);
+          if (canHandle) {
+            setBuilderDisabled(false);
+            setBuilderDisabledReason('');
+            // Parse fields so builder is ready
+            const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
+            setSchemaMetadata(metadata);
+            if (parsed.length > 0) {
+              setFields(parsed);
+            }
+          } else {
+            setBuilderDisabled(true);
+            setBuilderDisabledReason('Schema contains advanced features not supported by visual builder');
+          }
+        } catch {
+          setBuilderDisabled(true);
+          setBuilderDisabledReason('Schema structure is not compatible with visual builder');
+        }
+      } else {
+        // Invalid JSON → disable visual builder
+        setBuilderDisabled(true);
+        setBuilderDisabledReason('Invalid JSON format - fix raw value to use Visual Builder');
+      }
     } else {
+      // Empty raw → clear errors, re-enable builder
+      setRawError(undefined);
+      setRawValueInvalid(false);
+      setBuilderDisabled(false);
+      setBuilderDisabledReason('');
+    }
+  }, [canVisualBuilderHandleSchema]);
+
+  // Handle field changes from visual builder - sync to raw (source of truth)
+  const handleFieldsChange = useCallback((newFields: SchemaField[]) => {
+    setFields(newFields);
+    // Sync builder changes to raw
+    const effectiveFields = isAllRequired ? applyAllRequired(newFields) : newFields;
+    const hasValidField = effectiveFields.some((f) => f.name.trim() !== '');
+    if (hasValidField) {
+      const schema = fieldsToJsonSchema(effectiveFields, schemaMetadata);
+      const newRaw = JSON.stringify(schema, null, 2);
+      setRawSchema(newRaw);
       setRawError(undefined);
       setRawValueInvalid(false);
     }
-    // In raw mode, always propagate value to parent (even if invalid)
-    // Validation error is just a warning, user can still save
-    if (mode === 'raw') {
-      setOutputSchema(value.trim());
-    }
-  }, [mode, setOutputSchema]);
+  }, [isAllRequired, applyAllRequired, schemaMetadata]);
 
   const handleEnabledChange = useCallback((checked: boolean) => {
     setEnabled(checked);
@@ -389,7 +412,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
                   showIcon
                 />
               ) : (
-                <SchemaFieldList fields={fields} onChange={setFields} readOnly={readOnly} isAllRequired={isAllRequired} />
+                <SchemaFieldList fields={fields} onChange={handleFieldsChange} readOnly={readOnly} isAllRequired={isAllRequired} />
               )}
             </div>
           )}

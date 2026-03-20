@@ -72,20 +72,10 @@ export default function AgentOutputSchemaPage() {
         setOutputSchema={setOutputSchema}
         setOutputSchemaEnabled={setOutputSchemaEnabled}
         initialEnabled={outputSchemaEnabled}
-        onFetchSchema={handleFetchSchema}
+        // onFetchSchema={handleFetchSchema}
         // readOnly={true}
         isAllRequired={true}
-        initOutputSchema={JSON.stringify({
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "name": { "type": "string" },
-            "age": { "type": "integer", "minimum": 0 },
-            "email": { "type": "string", "format": "email" }
-          },
-          "required": ["name", "email"],
-          "additionalProperties": false
-        })}
+        initOutputSchema={"invalidvaluejson"}
       />
 
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
