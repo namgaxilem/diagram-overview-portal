@@ -30,6 +30,7 @@ interface OutputSchemaBuilderProps {
   setOutputSchemaEnabled: (enabled: boolean) => void;
   value?: string; // Raw JSON schema value - source of truth
   initOutputSchema?: string; // Deprecated: use 'value' instead
+  initialEnabled?: boolean; // Initial enabled state from parent
   readOnly?: boolean;
   isAllRequired?: boolean;
 }
@@ -38,14 +39,16 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
   setOutputSchema, 
   setOutputSchemaEnabled, 
   value, 
-  initOutputSchema, 
+  initOutputSchema,
+  initialEnabled = false,
   readOnly = false, 
   isAllRequired = false 
 }) => {
   const initialized = useRef(false);
-  const [enabled, setEnabled] = useState<boolean>(false);
+  const [enabled, setEnabled] = useState<boolean>(initialEnabled);
   const [mode, setMode] = useState<'builder' | 'raw'>('builder');
   const [fields, setFields] = useState<SchemaField[]>([createEmptyField()]);
+  const [schemaMetadata, setSchemaMetadata] = useState<Record<string, unknown>>({});
   const [rawSchema, setRawSchema] = useState<string>('');
   const [rawError, setRawError] = useState<string | undefined>();
   const [builderDisabled, setBuilderDisabled] = useState<boolean>(false);
@@ -60,16 +63,21 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
     const initialValue = value || initOutputSchema;
     if (!initialValue) return;
 
+    // Set raw value as-is (source of truth)
+    setRawSchema(initialValue);
+
+    // Try to validate and parse
     const result = validateJsonSchema(initialValue);
     if (result.valid && result.schema) {
-      setRawSchema(JSON.stringify(result.schema, null, 2));
-      setEnabled(true);
+      setRawError(undefined);
+      setRawValueInvalid(false);
 
       // Try to parse for visual builder
       try {
-        const parsed = jsonSchemaToFields(result.schema);
+        const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
+        setSchemaMetadata(metadata);
+        
         // If schema is valid JSON but visual builder can't fully represent it
-        // (e.g., has complex nested structures, refs, conditionals, etc.)
         const isComplexSchema = !canVisualBuilderHandleSchema(result.schema);
         
         if (isComplexSchema) {
@@ -86,9 +94,12 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
         setMode('raw');
       }
     } else {
-      // Invalid JSON - still set raw value and let user fix it
-      setRawSchema(initialValue);
+      // Invalid JSON - set error and disable builder
       setRawError(result.error);
+      setRawValueInvalid(true);
+      setBuilderDisabled(true);
+      setBuilderDisabledReason('Invalid JSON format');
+      setMode('raw');
     }
   }, [value, initOutputSchema]);
 
@@ -173,14 +184,14 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
       const effectiveFields = isAllRequired ? applyAllRequired(fields) : fields;
       const hasValidField = effectiveFields.some((f) => f.name.trim() !== '');
       if (!hasValidField) return '';
-      const schema = fieldsToJsonSchema(effectiveFields);
+      const schema = fieldsToJsonSchema(effectiveFields, schemaMetadata);
       return JSON.stringify(schema, null, 2);
     }
 
     // In raw mode, return the raw input (even if invalid - raw is source of truth)
     // User can save any value, validation is just a warning
     return rawSchema.trim();
-  }, [enabled, mode, fields, rawSchema, isAllRequired, applyAllRequired]);
+  }, [enabled, mode, fields, rawSchema, isAllRequired, applyAllRequired, schemaMetadata]);
 
   // Propagate values to parent
   useEffect(() => {
@@ -202,7 +213,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
         // Builder → Raw: populate raw editor with current schema
         const hasValidField = fields.some((f) => f.name.trim() !== '');
         if (hasValidField) {
-          const schema = fieldsToJsonSchema(fields);
+          const schema = fieldsToJsonSchema(fields, schemaMetadata);
           setRawSchema(JSON.stringify(schema, null, 2));
           setRawError(undefined);
         } else {
@@ -215,7 +226,8 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
           const result = validateJsonSchema(rawSchema);
           if (result.valid && result.schema) {
             try {
-              const parsed = jsonSchemaToFields(result.schema);
+              const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
+              setSchemaMetadata(metadata);
               if (parsed.length > 0) {
                 setFields(parsed);
               }
@@ -351,24 +363,9 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
                   message="Cannot parse from raw value"
                   description="Please correct raw value to a valid JSON schema. Switch to Raw JSON Schema tab to fix the errors."
                   showIcon
-                  style={{ marginBottom: 12 }}
                 />
               ) : (
-                <>
-                  <Text
-                    type="secondary"
-                    style={{
-                      display: 'block',
-                      marginBottom: 12,
-                      fontSize: 13,
-                    }}
-                  >
-                    Define the properties that the agent must include in its
-                    structured response. Each property has a name, type,
-                    optional description, and can be marked as required.
-                  </Text>
-                  <SchemaFieldList fields={fields} onChange={setFields} readOnly={readOnly} isAllRequired={isAllRequired} />
-                </>
+                <SchemaFieldList fields={fields} onChange={setFields} readOnly={readOnly} isAllRequired={isAllRequired} />
               )}
             </div>
           )}
@@ -382,13 +379,6 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
                 gap: 8,
               }}
             >
-              <Text
-                type="secondary"
-                style={{ fontSize: 13 }}
-              >
-                Enter a valid JSON Schema object directly. The schema is
-                validated in real-time.
-              </Text>
               <TextArea
                 value={rawSchema}
                 onChange={(e) =>

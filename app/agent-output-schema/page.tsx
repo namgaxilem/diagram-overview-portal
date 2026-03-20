@@ -9,7 +9,7 @@ const { Title, Text } = Typography;
 
 export default function AgentOutputSchemaPage() {
   const [outputSchema, setOutputSchema] = useState<string>('');
-  const [outputSchemaEnabled, setOutputSchemaEnabled] = useState<boolean>(false);
+  const [outputSchemaEnabled, setOutputSchemaEnabled] = useState<boolean>(true);
   const [schemaOutput, setSchemaOutput] = useState<string>('');
 
   const handleGetSchema = () => {
@@ -52,15 +52,19 @@ export default function AgentOutputSchemaPage() {
       <OutputSchemaBuilder
         setOutputSchema={setOutputSchema}
         setOutputSchemaEnabled={setOutputSchemaEnabled}
+        initialEnabled={outputSchemaEnabled}
         // readOnly={true}
         isAllRequired={true}
         initOutputSchema={JSON.stringify({
-          type: 'object',
-          properties: {
-            answer: { type: 'string', description: "The agent's answer" },
-            confidence: { type: 'number', description: 'Confidence score between 0 and 1' },
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "age": { "type": "integer", "minimum": 0 },
+            "email": { "type": "string", "format": "email" }
           },
-          required: ['answer'],
+          "required": ["name", "email"],
+          "additionalProperties": false
         })}
       />
 

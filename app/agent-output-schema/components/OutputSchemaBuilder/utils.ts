@@ -43,7 +43,8 @@ export function createEmptyField(): SchemaField {
 }
 
 export function fieldsToJsonSchema(
-  fields: SchemaField[]
+  fields: SchemaField[],
+  metadata?: Record<string, unknown>
 ): Record<string, unknown> {
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
@@ -105,19 +106,32 @@ export function fieldsToJsonSchema(
     schema.required = required;
   }
 
+  // Merge metadata fields (like $schema, additionalProperties, etc.)
+  if (metadata) {
+    Object.assign(schema, metadata);
+  }
+
   return schema;
 }
 
 export function jsonSchemaToFields(
   schema: Record<string, unknown>
-): SchemaField[] {
+): { fields: SchemaField[]; metadata: Record<string, unknown> } {
   const fields: SchemaField[] = [];
   const properties = schema.properties as
     | Record<string, Record<string, unknown>>
     | undefined;
   const required = (schema.required as string[]) || [];
 
-  if (!properties) return fields;
+  // Extract metadata (everything except properties, required, type)
+  const metadata: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(schema)) {
+    if (key !== 'properties' && key !== 'required' && key !== 'type') {
+      metadata[key] = value;
+    }
+  }
+
+  if (!properties) return { fields, metadata };
 
   for (const [name, prop] of Object.entries(properties)) {
     const field = createEmptyField();
@@ -127,16 +141,18 @@ export function jsonSchemaToFields(
     field.required = required.includes(name);
 
     if (field.type === 'object' && prop.properties) {
-      field.properties = jsonSchemaToFields(
+      const result = jsonSchemaToFields(
         prop as Record<string, unknown>
       );
+      field.properties = result.fields;
     }
 
     if (field.type === 'array' && prop.items) {
       const items = prop.items as Record<string, unknown>;
       if (items.type === 'object' && items.properties) {
         field.itemType = 'object';
-        field.properties = jsonSchemaToFields(items);
+        const result = jsonSchemaToFields(items);
+        field.properties = result.fields;
       } else {
         field.itemType = (items.type as string) || 'string';
       }
@@ -149,7 +165,7 @@ export function jsonSchemaToFields(
     fields.push(field);
   }
 
-  return fields;
+  return { fields, metadata };
 }
 
 export function validateJsonSchema(
