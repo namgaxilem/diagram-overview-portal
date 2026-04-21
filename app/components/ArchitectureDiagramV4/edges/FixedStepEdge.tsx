@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import { BaseEdge, EdgeProps, getStraightPath } from "@xyflow/react";
+import type { EdgeProps } from '@xyflow/react';
+import { BaseEdge } from '@xyflow/react';
 
 interface FixedStepEdgeProps extends EdgeProps {
   data?: {
@@ -26,12 +27,6 @@ export function FixedStepEdge({
   const path = `M ${sourceX} ${sourceY} L ${sourceX} ${fixedY} L ${targetX} ${fixedY} L ${targetX} ${targetY}`;
 
   return (
-    <BaseEdge
-      id={id}
-      path={path}
-      markerEnd={markerEnd}
-      markerStart={markerStart}
-      style={style}
-    />
+    <BaseEdge id={id} path={path} markerEnd={markerEnd} markerStart={markerStart} style={style} />
   );
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { kubectl, getAge } from '../_utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +17,10 @@ function mapItem(type: string, item: any) {
     const containers: string[] = (item.spec.containers ?? []).map((c: { name: string }) => c.name);
     const statuses = item.status.containerStatuses ?? [];
     const ready = statuses.filter((c: { ready: boolean }) => c.ready).length;
-    const restarts = statuses.reduce((sum: number, c: { restartCount?: number }) => sum + (c.restartCount ?? 0), 0);
+    const restarts = statuses.reduce(
+      (sum: number, c: { restartCount?: number }) => sum + (c.restartCount ?? 0),
+      0
+    );
     return {
       ...base,
       status: item.status.phase as string,
@@ -48,15 +52,19 @@ function mapItem(type: string, item: any) {
 
   if (type === 'services') {
     const ports = (item.spec.ports ?? [])
-      .map((p: { port: number; targetPort?: string | number; protocol?: string }) =>
-        `${p.port}${p.targetPort != null ? ':' + p.targetPort : ''}/${p.protocol ?? 'TCP'}`)
+      .map(
+        (p: { port: number; targetPort?: string | number; protocol?: string }) =>
+          `${p.port}${p.targetPort != null ? ':' + p.targetPort : ''}/${p.protocol ?? 'TCP'}`
+      )
       .join(', ');
     const ingress = item.status?.loadBalancer?.ingress ?? [];
     return {
       ...base,
       serviceType: item.spec.type as string,
       clusterIP: item.spec.clusterIP as string,
-      externalIP: ingress.map((i: { ip?: string; hostname?: string }) => i.ip ?? i.hostname).join(', ') || '<none>',
+      externalIP:
+        ingress.map((i: { ip?: string; hostname?: string }) => i.ip ?? i.hostname).join(', ') ||
+        '<none>',
       ports,
     };
   }
@@ -79,9 +87,14 @@ function mapItem(type: string, item: any) {
 
   if (type === 'ingresses') {
     const rules = item.spec.rules ?? [];
-    const hosts = rules.map((r: { host?: string }) => r.host).filter(Boolean).join(', ');
+    const hosts = rules
+      .map((r: { host?: string }) => r.host)
+      .filter(Boolean)
+      .join(', ');
     const ingress = item.status?.loadBalancer?.ingress ?? [];
-    const address = ingress.map((i: { ip?: string; hostname?: string }) => i.ip ?? i.hostname).join(', ');
+    const address = ingress
+      .map((i: { ip?: string; hostname?: string }) => i.ip ?? i.hostname)
+      .join(', ');
     return {
       ...base,
       hosts: hosts || '<none>',

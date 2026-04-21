@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { DiagramNode } from "../../../config/diagram-config";
-import { NodeCard, ApiTagAbove, ApiTagBelow, WorkspaceTag } from "../shared/NodeCard";
+import type { DiagramNode } from '../../../config/diagram-config';
+import { NodeCard, ApiTagAbove, ApiTagBelow, WorkspaceTag } from '../shared/NodeCard';
 
 interface MiddlewareLayerProps {
   nodes: DiagramNode[];
@@ -35,13 +35,69 @@ export default function MiddlewareLayer({ nodes }: MiddlewareLayerProps) {
           {/* Horizontal bus - not reaching OMW */}
           <line x1="22%" y1="40%" x2="95%" y2="40%" stroke="#0ea5e9" strokeWidth="1.5" />
           {/* Vertical lines down to each middleware component (except OMW) */}
-          <line x1="22%" y1="40%" x2="22%" y2="100%" stroke="#0ea5e9" strokeWidth="1.5" markerEnd="url(#arrowhead-mid-down)" />
-          <line x1="34%" y1="40%" x2="34%" y2="100%" stroke="#0ea5e9" strokeWidth="1.5" markerEnd="url(#arrowhead-mid-down)" />
-          <line x1="47%" y1="40%" x2="47%" y2="100%" stroke="#0ea5e9" strokeWidth="1.5" markerEnd="url(#arrowhead-mid-down)" />
-          <line x1="59%" y1="40%" x2="59%" y2="100%" stroke="#0ea5e9" strokeWidth="1.5" markerEnd="url(#arrowhead-mid-down)" />
-          <line x1="72%" y1="40%" x2="72%" y2="100%" stroke="#0ea5e9" strokeWidth="1.5" markerEnd="url(#arrowhead-mid-down)" />
-          <line x1="84%" y1="40%" x2="84%" y2="100%" stroke="#0ea5e9" strokeWidth="1.5" markerEnd="url(#arrowhead-mid-down)" />
-          <line x1="95%" y1="40%" x2="95%" y2="100%" stroke="#0ea5e9" strokeWidth="1.5" markerEnd="url(#arrowhead-mid-down)" />
+          <line
+            x1="22%"
+            y1="40%"
+            x2="22%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            markerEnd="url(#arrowhead-mid-down)"
+          />
+          <line
+            x1="34%"
+            y1="40%"
+            x2="34%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            markerEnd="url(#arrowhead-mid-down)"
+          />
+          <line
+            x1="47%"
+            y1="40%"
+            x2="47%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            markerEnd="url(#arrowhead-mid-down)"
+          />
+          <line
+            x1="59%"
+            y1="40%"
+            x2="59%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            markerEnd="url(#arrowhead-mid-down)"
+          />
+          <line
+            x1="72%"
+            y1="40%"
+            x2="72%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            markerEnd="url(#arrowhead-mid-down)"
+          />
+          <line
+            x1="84%"
+            y1="40%"
+            x2="84%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            markerEnd="url(#arrowhead-mid-down)"
+          />
+          <line
+            x1="95%"
+            y1="40%"
+            x2="95%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            markerEnd="url(#arrowhead-mid-down)"
+          />
         </svg>
       </div>
 
@@ -59,22 +115,19 @@ export default function MiddlewareLayer({ nodes }: MiddlewareLayerProps) {
         {/* Other Middleware Services */}
         {otherNodes.map((node, index) => {
           const isLast = index === otherNodes.length - 1;
-          const isDeveloperPortal = node.id === "developer-portal";
-          
-          let bgClass = "border-green-600 bg-green-600 text-white hover:bg-green-700";
+          const isDeveloperPortal = node.id === 'developer-portal';
+
+          let bgClass = 'border-green-600 bg-green-600 text-white hover:bg-green-700';
           if (isLast) {
-            bgClass = "border-orange-500 bg-orange-500 text-white hover:bg-orange-600";
+            bgClass = 'border-orange-500 bg-orange-500 text-white hover:bg-orange-600';
           } else if (isDeveloperPortal) {
-            bgClass = "border-sky-500 bg-sky-500 text-white hover:bg-sky-600";
+            bgClass = 'border-sky-500 bg-sky-500 text-white hover:bg-sky-600';
           }
 
           return (
             <div key={node.id} className="relative pt-3 pb-2 flex-1">
               <ApiTagAbove />
-              <NodeCard
-                node={node}
-                className={`h-full ${bgClass}`}
-              >
+              <NodeCard node={node} className={`h-full ${bgClass}`}>
                 {node.hasWorkspace && <WorkspaceTag />}
               </NodeCard>
             </div>
@@ -86,23 +139,79 @@ export default function MiddlewareLayer({ nodes }: MiddlewareLayerProps) {
       <div className="relative h-[20px]">
         <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
           {/* Horizontal dashed line from OMW to other middleware */}
-          <line 
-            x1="7%" 
-            y1="50%" 
-            x2="95%" 
-            y2="50%" 
-            stroke="#0ea5e9" 
-            strokeWidth="1.5" 
+          <line
+            x1="7%"
+            y1="50%"
+            x2="95%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
             strokeDasharray="4,2"
           />
           {/* Connection points from each middleware to horizontal line */}
-          <line x1="22%" y1="0" x2="22%" y2="50%" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4,2" />
-          <line x1="34%" y1="0" x2="34%" y2="50%" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4,2" />
-          <line x1="47%" y1="0" x2="47%" y2="50%" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4,2" />
-          <line x1="59%" y1="0" x2="59%" y2="50%" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4,2" />
-          <line x1="72%" y1="0" x2="72%" y2="50%" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4,2" />
-          <line x1="84%" y1="0" x2="84%" y2="50%" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4,2" />
-          <line x1="95%" y1="0" x2="95%" y2="50%" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4,2" />
+          <line
+            x1="22%"
+            y1="0"
+            x2="22%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            strokeDasharray="4,2"
+          />
+          <line
+            x1="34%"
+            y1="0"
+            x2="34%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            strokeDasharray="4,2"
+          />
+          <line
+            x1="47%"
+            y1="0"
+            x2="47%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            strokeDasharray="4,2"
+          />
+          <line
+            x1="59%"
+            y1="0"
+            x2="59%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            strokeDasharray="4,2"
+          />
+          <line
+            x1="72%"
+            y1="0"
+            x2="72%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            strokeDasharray="4,2"
+          />
+          <line
+            x1="84%"
+            y1="0"
+            x2="84%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            strokeDasharray="4,2"
+          />
+          <line
+            x1="95%"
+            y1="0"
+            x2="95%"
+            y2="50%"
+            stroke="#0ea5e9"
+            strokeWidth="1.5"
+            strokeDasharray="4,2"
+          />
         </svg>
       </div>
     </div>

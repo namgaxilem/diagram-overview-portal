@@ -1,28 +1,15 @@
 'use client';
 
 import React from 'react';
-import {
-  Input,
-  Select,
-  Button,
-  Checkbox,
-  Card,
-  Tooltip,
-  Typography,
-  Space,
-} from 'antd';
+import { Input, Select, Button, Checkbox, Card, Tooltip, Typography, Space } from 'antd';
 import {
   DeleteOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import {
-  SchemaField,
-  JSON_SCHEMA_TYPES,
-  ARRAY_ITEM_TYPES,
-  createEmptyField,
-} from './utils';
+import type { SchemaField } from './utils';
+import { JSON_SCHEMA_TYPES, ARRAY_ITEM_TYPES, createEmptyField } from './utils';
 
 const { Text } = Typography;
 
@@ -58,11 +45,10 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
   const moveField = (index: number, direction: 'up' | 'down') => {
     const newFields = [...fields];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newFields.length) return;
-    [newFields[index], newFields[targetIndex]] = [
-      newFields[targetIndex],
-      newFields[index],
-    ];
+    if (targetIndex < 0 || targetIndex >= newFields.length) {
+      return;
+    }
+    [newFields[index], newFields[targetIndex]] = [newFields[targetIndex], newFields[index]];
     onChange(newFields);
   };
 
@@ -77,9 +63,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
             background: depth % 2 === 1 ? '#fafbfc' : undefined,
           }}
         >
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {/* Row 1: Name, Type, Required, Actions */}
             <div
               style={{
@@ -92,9 +76,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
               <Input
                 placeholder="Property name"
                 value={field.name}
-                onChange={(e) =>
-                  updateField(index, { name: e.target.value })
-                }
+                onChange={(e) => updateField(index, { name: e.target.value })}
                 style={{ flex: 1, minWidth: 140 }}
                 status={field.name.trim() === '' ? 'warning' : undefined}
                 disabled={readOnly}
@@ -103,10 +85,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                 value={field.type}
                 onChange={(value) => {
                   const updates: Partial<SchemaField> = { type: value };
-                  if (
-                    value === 'object' &&
-                    field.properties.length === 0
-                  ) {
+                  if (value === 'object' && field.properties.length === 0) {
                     updates.properties = [createEmptyField()];
                   }
                   if (value === 'array') {
@@ -168,9 +147,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
             <Input
               placeholder="Description (optional)"
               value={field.description}
-              onChange={(e) =>
-                updateField(index, { description: e.target.value })
-              }
+              onChange={(e) => updateField(index, { description: e.target.value })}
               disabled={readOnly}
             />
 
@@ -179,9 +156,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
               <Input
                 placeholder="Enum values — comma-separated (optional), e.g. red, green, blue"
                 value={field.enumValues}
-                onChange={(e) =>
-                  updateField(index, { enumValues: e.target.value })
-                }
+                onChange={(e) => updateField(index, { enumValues: e.target.value })}
                 disabled={readOnly}
               />
             )}
@@ -195,10 +170,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                   alignItems: 'center',
                 }}
               >
-                <Text
-                  type="secondary"
-                  style={{ whiteSpace: 'nowrap', fontSize: 13 }}
-                >
+                <Text type="secondary" style={{ whiteSpace: 'nowrap', fontSize: 13 }}>
                   Item type:
                 </Text>
                 <Select
@@ -207,10 +179,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                     const updates: Partial<SchemaField> = {
                       itemType: value,
                     };
-                    if (
-                      value === 'object' &&
-                      field.properties.length === 0
-                    ) {
+                    if (value === 'object' && field.properties.length === 0) {
                       updates.properties = [createEmptyField()];
                     }
                     updateField(index, updates);
@@ -224,8 +193,7 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
 
             {/* Nested properties for object type or array-of-objects */}
             {(field.type === 'object' ||
-              (field.type === 'array' &&
-                field.itemType === 'object')) && (
+              (field.type === 'array' && field.itemType === 'object')) && (
               <div style={{ marginLeft: 8, marginTop: 4 }}>
                 <Text
                   type="secondary"
@@ -235,15 +203,11 @@ const SchemaFieldList: React.FC<SchemaFieldListProps> = ({
                     display: 'block',
                   }}
                 >
-                  {field.type === 'array'
-                    ? 'Array item properties:'
-                    : 'Nested properties:'}
+                  {field.type === 'array' ? 'Array item properties:' : 'Nested properties:'}
                 </Text>
                 <SchemaFieldList
                   fields={field.properties}
-                  onChange={(newProps) =>
-                    updateField(index, { properties: newProps })
-                  }
+                  onChange={(newProps) => updateField(index, { properties: newProps })}
                   depth={depth + 1}
                   readOnly={readOnly}
                   isAllRequired={isAllRequired}

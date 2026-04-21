@@ -14,7 +14,13 @@ interface DescribeModalProps {
   onClose: () => void;
 }
 
-export default function DescribeModal({ open, title, content, loading, onClose }: DescribeModalProps) {
+export default function DescribeModal({
+  open,
+  title,
+  content,
+  loading,
+  onClose,
+}: DescribeModalProps) {
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = () => {
@@ -42,7 +48,9 @@ export default function DescribeModal({ open, title, content, loading, onClose }
           >
             {copied ? 'Copied!' : 'Copy'}
           </Button>
-          <Button type="primary" onClick={onClose}>Close</Button>
+          <Button type="primary" onClick={onClose}>
+            Close
+          </Button>
         </Space>
       }
       width={900}

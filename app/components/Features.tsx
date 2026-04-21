@@ -1,12 +1,7 @@
 const features = [
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -15,19 +10,14 @@ const features = [
         />
       </svg>
     ),
-    title: "Workspace Management",
+    title: 'Workspace Management',
     description:
-      "Create and manage organizational workspaces with role-based access control and multi-tenant isolation.",
-    color: "bg-amber-500",
+      'Create and manage organizational workspaces with role-based access control and multi-tenant isolation.',
+    color: 'bg-amber-500',
   },
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -36,19 +26,14 @@ const features = [
         />
       </svg>
     ),
-    title: "Onboarding Workflows",
+    title: 'Onboarding Workflows',
     description:
-      "Streamlined application onboarding with automated provisioning, approval workflows, and service integrations.",
-    color: "bg-emerald-500",
+      'Streamlined application onboarding with automated provisioning, approval workflows, and service integrations.',
+    color: 'bg-emerald-500',
   },
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -57,10 +42,10 @@ const features = [
         />
       </svg>
     ),
-    title: "Audit & Compliance",
+    title: 'Audit & Compliance',
     description:
-      "Comprehensive audit logs and permission tracking for complete visibility into workspace activities and access.",
-    color: "bg-sky-500",
+      'Comprehensive audit logs and permission tracking for complete visibility into workspace activities and access.',
+    color: 'bg-sky-500',
   },
 ];
 
@@ -79,12 +64,8 @@ export default function Features() {
               >
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                {feature.description}
-              </p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+              <p className="text-gray-600 leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>

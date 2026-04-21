@@ -1,1 +1,1 @@
-export { FixedStepEdge } from "./FixedStepEdge";
+export { FixedStepEdge } from './FixedStepEdge';

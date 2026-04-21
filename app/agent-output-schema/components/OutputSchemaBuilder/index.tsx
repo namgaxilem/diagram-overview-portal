@@ -13,10 +13,15 @@ import {
   Tag,
   Button,
 } from 'antd';
-import { CheckCircleOutlined, CodeOutlined, ToolOutlined, CloudDownloadOutlined } from '@ant-design/icons';
-import SchemaFieldList from './SchemaFieldList';
 import {
-  SchemaField,
+  CheckCircleOutlined,
+  CodeOutlined,
+  ToolOutlined,
+  CloudDownloadOutlined,
+} from '@ant-design/icons';
+import SchemaFieldList from './SchemaFieldList';
+import type { SchemaField } from './utils';
+import {
   createEmptyField,
   fieldsToJsonSchema,
   jsonSchemaToFields,
@@ -37,13 +42,13 @@ interface OutputSchemaBuilderProps {
   onFetchSchema?: (prompt: string) => Promise<string> | void; // Callback to fetch/generate schema from API
 }
 
-const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({ 
-  setOutputSchema, 
-  setOutputSchemaEnabled, 
-  value, 
+const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
+  setOutputSchema,
+  setOutputSchemaEnabled,
+  value,
   initOutputSchema,
   initialEnabled = false,
-  readOnly = false, 
+  readOnly = false,
   isAllRequired = false,
   onFetchSchema,
 }) => {
@@ -60,13 +65,107 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
   const [isFetchingSchema, setIsFetchingSchema] = useState<boolean>(false);
   const [fetchPrompt, setFetchPrompt] = useState<string>('');
 
+  // Helper: apply isAllRequired to fields recursively
+  const applyAllRequired = useCallback(function applyRequired(
+    fieldList: SchemaField[]
+  ): SchemaField[] {
+    return fieldList.map((f) => ({
+      ...f,
+      required: true,
+      properties: f.properties.length > 0 ? applyRequired(f.properties) : f.properties,
+    }));
+  }, []);
+
+  // Helper: check if visual builder can handle this schema
+  const canVisualBuilderHandleSchema = useCallback(function checkSchema(
+    schema: Record<string, unknown>
+  ): boolean {
+    // Check for unsupported features
+
+    // 1. Check for $ref (references)
+    const hasRefs = JSON.stringify(schema).includes('"$ref"');
+    if (hasRefs) {
+      return false;
+    }
+
+    // 2. Check for oneOf, anyOf, allOf
+    if (schema.oneOf || schema.anyOf || schema.allOf) {
+      return false;
+    }
+
+    // 3. Check for if/then/else (conditional schemas)
+    if (schema.if || schema.then || schema.else) {
+      return false;
+    }
+
+    // 4. Check for additionalProperties being an object (schema validation)
+    const additionalProps = schema.additionalProperties;
+    if (additionalProps && typeof additionalProps === 'object') {
+      return false;
+    }
+
+    // 5. Check for patternProperties
+    if (schema.patternProperties) {
+      return false;
+    }
+
+    // 6. Check for propertyNames
+    if (schema.propertyNames) {
+      return false;
+    }
+
+    // 7. Check for dependencies (old draft) or dependentSchemas/dependentRequired (new draft)
+    if (schema.dependencies || schema.dependentSchemas || schema.dependentRequired) {
+      return false;
+    }
+
+    // 8. Check root type is object
+    if (schema.type !== 'object') {
+      return false;
+    }
+
+    // 9. Check array items don't have complex schemas we can't handle
+    const properties = schema.properties as Record<string, unknown> | undefined;
+    if (properties) {
+      for (const prop of Object.values(properties)) {
+        if (typeof prop === 'object' && prop !== null) {
+          const propObj = prop as Record<string, unknown>;
+
+          // Check nested arrays with complex items
+          if (propObj.type === 'array' && propObj.items) {
+            const items = propObj.items as Record<string, unknown>;
+            if (items.properties) {
+              // Nested object items - recursively check
+              if (!checkSchema(items)) {
+                return false;
+              }
+            }
+          }
+
+          // Check nested objects
+          if (propObj.type === 'object' && propObj.properties) {
+            if (!checkSchema(propObj)) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+
+    return true;
+  }, []);
+
   // Initialize from value or initOutputSchema on first mount
   useEffect(() => {
-    if (initialized.current) return;
+    if (initialized.current) {
+      return;
+    }
     initialized.current = true;
 
     const initialValue = value || initOutputSchema;
-    if (!initialValue) return;
+    if (!initialValue) {
+      return;
+    }
 
     // Set raw value as-is (source of truth)
     setRawSchema(initialValue);
@@ -81,18 +180,20 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
       try {
         const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
         setSchemaMetadata(metadata);
-        
+
         // If schema is valid JSON but visual builder can't fully represent it
         const isComplexSchema = !canVisualBuilderHandleSchema(result.schema);
-        
+
         if (isComplexSchema) {
           setBuilderDisabled(true);
-          setBuilderDisabledReason('Schema contains advanced features not supported by visual builder');
+          setBuilderDisabledReason(
+            'Schema contains advanced features not supported by visual builder'
+          );
           setMode('raw');
         } else if (parsed.length > 0) {
           setFields(parsed);
         }
-      } catch (e) {
+      } catch (_e) {
         // Parsing failed - disable visual builder
         setBuilderDisabled(true);
         setBuilderDisabledReason('Schema structure is not compatible with visual builder');
@@ -106,85 +207,21 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
       setBuilderDisabledReason('Invalid JSON format');
       setMode('raw');
     }
-  }, [value, initOutputSchema]);
+  }, [value, initOutputSchema, canVisualBuilderHandleSchema]);
 
-  // When readOnly, force enabled to true
+  // When readOnly, sync enabled state
   useEffect(() => {
     if (readOnly && !enabled) {
       setEnabled(true);
     }
   }, [readOnly, enabled]);
 
-  // Helper: apply isAllRequired to fields recursively
-  const applyAllRequired = useCallback((fieldList: SchemaField[]): SchemaField[] => {
-    return fieldList.map((f) => ({
-      ...f,
-      required: true,
-      properties: f.properties.length > 0 ? applyAllRequired(f.properties) : f.properties,
-    }));
-  }, []);
-
-  // Helper: check if visual builder can handle this schema
-  const canVisualBuilderHandleSchema = useCallback((schema: Record<string, unknown>): boolean => {
-    // Check for unsupported features
-    
-    // 1. Check for $ref (references)
-    const hasRefs = JSON.stringify(schema).includes('"$ref"');
-    if (hasRefs) return false;
-    
-    // 2. Check for oneOf, anyOf, allOf
-    if (schema.oneOf || schema.anyOf || schema.allOf) return false;
-    
-    // 3. Check for if/then/else (conditional schemas)
-    if (schema.if || schema.then || schema.else) return false;
-    
-    // 4. Check for additionalProperties being an object (schema validation)
-    const additionalProps = schema.additionalProperties;
-    if (additionalProps && typeof additionalProps === 'object') return false;
-    
-    // 5. Check for patternProperties
-    if (schema.patternProperties) return false;
-    
-    // 6. Check for propertyNames
-    if (schema.propertyNames) return false;
-    
-    // 7. Check for dependencies (old draft) or dependentSchemas/dependentRequired (new draft)
-    if (schema.dependencies || schema.dependentSchemas || schema.dependentRequired) return false;
-    
-    // 8. Check root type is object
-    if (schema.type !== 'object') return false;
-    
-    // 9. Check array items don't have complex schemas we can't handle
-    const properties = schema.properties as Record<string, unknown> | undefined;
-    if (properties) {
-      for (const prop of Object.values(properties)) {
-        if (typeof prop === 'object' && prop !== null) {
-          const propObj = prop as Record<string, unknown>;
-          
-          // Check nested arrays with complex items
-          if (propObj.type === 'array' && propObj.items) {
-            const items = propObj.items as Record<string, unknown>;
-            if (items.properties) {
-              // Nested object items - recursively check
-              if (!canVisualBuilderHandleSchema(items)) return false;
-            }
-          }
-          
-          // Check nested objects
-          if (propObj.type === 'object' && propObj.properties) {
-            if (!canVisualBuilderHandleSchema(propObj)) return false;
-          }
-        }
-      }
-    }
-    
-    return true;
-  }, []);
-
   // Compute JSON schema string from current state
   // Raw is the single source of truth - always return rawSchema
   const computedSchema = useMemo(() => {
-    if (!enabled) return '';
+    if (!enabled) {
+      return '';
+    }
     return rawSchema.trim();
   }, [enabled, rawSchema]);
 
@@ -232,62 +269,70 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
   );
 
   // Handle raw schema text change - raw JSON is source of truth
-  const handleRawSchemaChange = useCallback((value: string) => {
-    setRawSchema(value);
-    if (value.trim()) {
-      const result = validateJsonSchema(value);
-      setRawError(result.valid ? undefined : result.error);
-      setRawValueInvalid(!result.valid);
-      
-      if (result.valid && result.schema) {
-        // Valid JSON - check if visual builder can handle it
-        try {
-          const canHandle = canVisualBuilderHandleSchema(result.schema);
-          if (canHandle) {
-            setBuilderDisabled(false);
-            setBuilderDisabledReason('');
-            // Parse fields so builder is ready
-            const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
-            setSchemaMetadata(metadata);
-            if (parsed.length > 0) {
-              setFields(parsed);
+  const handleRawSchemaChange = useCallback(
+    (value: string) => {
+      setRawSchema(value);
+      if (value.trim()) {
+        const result = validateJsonSchema(value);
+        setRawError(result.valid ? undefined : result.error);
+        setRawValueInvalid(!result.valid);
+
+        if (result.valid && result.schema) {
+          // Valid JSON - check if visual builder can handle it
+          try {
+            const canHandle = canVisualBuilderHandleSchema(result.schema);
+            if (canHandle) {
+              setBuilderDisabled(false);
+              setBuilderDisabledReason('');
+              // Parse fields so builder is ready
+              const { fields: parsed, metadata } = jsonSchemaToFields(result.schema);
+              setSchemaMetadata(metadata);
+              if (parsed.length > 0) {
+                setFields(parsed);
+              }
+            } else {
+              setBuilderDisabled(true);
+              setBuilderDisabledReason(
+                'Schema contains advanced features not supported by visual builder'
+              );
             }
-          } else {
+          } catch {
             setBuilderDisabled(true);
-            setBuilderDisabledReason('Schema contains advanced features not supported by visual builder');
+            setBuilderDisabledReason('Schema structure is not compatible with visual builder');
           }
-        } catch {
+        } else {
+          // Invalid JSON → disable visual builder
           setBuilderDisabled(true);
-          setBuilderDisabledReason('Schema structure is not compatible with visual builder');
+          setBuilderDisabledReason('Invalid JSON format - fix raw value to use Visual Builder');
         }
       } else {
-        // Invalid JSON → disable visual builder
-        setBuilderDisabled(true);
-        setBuilderDisabledReason('Invalid JSON format - fix raw value to use Visual Builder');
+        // Empty raw → clear errors, re-enable builder
+        setRawError(undefined);
+        setRawValueInvalid(false);
+        setBuilderDisabled(false);
+        setBuilderDisabledReason('');
       }
-    } else {
-      // Empty raw → clear errors, re-enable builder
-      setRawError(undefined);
-      setRawValueInvalid(false);
-      setBuilderDisabled(false);
-      setBuilderDisabledReason('');
-    }
-  }, [canVisualBuilderHandleSchema]);
+    },
+    [canVisualBuilderHandleSchema]
+  );
 
   // Handle field changes from visual builder - sync to raw (source of truth)
-  const handleFieldsChange = useCallback((newFields: SchemaField[]) => {
-    setFields(newFields);
-    // Sync builder changes to raw
-    const effectiveFields = isAllRequired ? applyAllRequired(newFields) : newFields;
-    const hasValidField = effectiveFields.some((f) => f.name.trim() !== '');
-    if (hasValidField) {
-      const schema = fieldsToJsonSchema(effectiveFields, schemaMetadata);
-      const newRaw = JSON.stringify(schema, null, 2);
-      setRawSchema(newRaw);
-      setRawError(undefined);
-      setRawValueInvalid(false);
-    }
-  }, [isAllRequired, applyAllRequired, schemaMetadata]);
+  const handleFieldsChange = useCallback(
+    (newFields: SchemaField[]) => {
+      setFields(newFields);
+      // Sync builder changes to raw
+      const effectiveFields = isAllRequired ? applyAllRequired(newFields) : newFields;
+      const hasValidField = effectiveFields.some((f) => f.name.trim() !== '');
+      if (hasValidField) {
+        const schema = fieldsToJsonSchema(effectiveFields, schemaMetadata);
+        const newRaw = JSON.stringify(schema, null, 2);
+        setRawSchema(newRaw);
+        setRawError(undefined);
+        setRawValueInvalid(false);
+      }
+    },
+    [isAllRequired, applyAllRequired, schemaMetadata]
+  );
 
   const handleEnabledChange = useCallback((checked: boolean) => {
     setEnabled(checked);
@@ -295,18 +340,22 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
 
   // Handle fetch schema from API
   const handleFetchSchema = useCallback(async () => {
-    if (!onFetchSchema) return;
-    
+    if (!onFetchSchema) {
+      return;
+    }
+
     setIsFetchingSchema(true);
     setRawError(undefined);
-    
+
     try {
       const fetchedSchema = await onFetchSchema(fetchPrompt);
       if (fetchedSchema) {
         handleRawSchemaChange(fetchedSchema);
       }
     } catch (error) {
-      setRawError(`Failed to fetch schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setRawError(
+        `Failed to fetch schema: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setIsFetchingSchema(false);
     }
@@ -328,11 +377,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
               Output Schema
             </Title>
             {enabled && computedSchema && (
-              <Tag
-                icon={<CheckCircleOutlined />}
-                color="success"
-                style={{ marginLeft: 4 }}
-              >
+              <Tag icon={<CheckCircleOutlined />} color="success" style={{ marginLeft: 4 }}>
                 Active
               </Tag>
             )}
@@ -349,9 +394,8 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
       {!enabled ? (
         <div style={{ padding: '12px 0' }}>
           <Text type="secondary">
-            Enable the output schema to define the structured response
-            format for this agent. When enabled, the agent will return
-            responses conforming to the specified JSON Schema.
+            Enable the output schema to define the structured response format for this agent. When
+            enabled, the agent will return responses conforming to the specified JSON Schema.
           </Text>
         </div>
       ) : (
@@ -412,7 +456,12 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
                   showIcon
                 />
               ) : (
-                <SchemaFieldList fields={fields} onChange={handleFieldsChange} readOnly={readOnly} isAllRequired={isAllRequired} />
+                <SchemaFieldList
+                  fields={fields}
+                  onChange={handleFieldsChange}
+                  readOnly={readOnly}
+                  isAllRequired={isAllRequired}
+                />
               )}
             </div>
           )}
@@ -448,9 +497,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
               )}
               <TextArea
                 value={rawSchema}
-                onChange={(e) =>
-                  handleRawSchemaChange(e.target.value)
-                }
+                onChange={(e) => handleRawSchemaChange(e.target.value)}
                 disabled={readOnly}
                 placeholder={`{
   "type": "object",
@@ -468,19 +515,13 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
 }`}
                 autoSize={{ minRows: 10, maxRows: 24 }}
                 style={{
-                  fontFamily:
-                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                   fontSize: 13,
                 }}
                 status={rawError ? 'error' : undefined}
               />
               {rawError && (
-                <Alert
-                  type="error"
-                  message={rawError}
-                  showIcon
-                  style={{ fontSize: 13 }}
-                />
+                <Alert type="error" message={rawError} showIcon style={{ fontSize: 13 }} />
               )}
               {!rawError && rawSchema.trim() && (
                 <Alert
@@ -515,8 +556,7 @@ const OutputSchemaBuilder: React.FC<OutputSchemaBuilderProps> = ({
                     borderRadius: 8,
                     padding: 16,
                     fontSize: 13,
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                     lineHeight: 1.5,
                     overflow: 'auto',
                     maxHeight: 360,

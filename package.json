@@ -6,29 +6,50 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,mjs,cjs,ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,mjs,cjs,ts,tsx,json,css,md}\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@ginkgo-bioworks/react-json-schema-form-builder": "^4.1.0",
-    "@mui/material": "^7.3.9",
-    "@xyflow/react": "^12.10.1",
-    "antd": "^6.3.1",
-    "axios": "^1.13.6",
+    "@mui/material": "^7.3.10",
+    "@xyflow/react": "^12.10.2",
+    "antd": "^6.3.6",
+    "axios": "^1.15.1",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.1",
-    "@types/node": "^20.19.37",
+    "@eslint/eslintrc": "^3.3.5",
+    "@tailwindcss/postcss": "^4.2.3",
+    "@types/node": "^20.19.39",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.1.6",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   }
 }

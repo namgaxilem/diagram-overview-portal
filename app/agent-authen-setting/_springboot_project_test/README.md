@@ -39,6 +39,7 @@ Spring Boot WebFlux application that acts as a **reverse proxy** to backend ADK 
 ### How cookie-based routing works
 
 #### Step 1: Initial Access (Prefixed Request)
+
 ```
 Browser: GET /proxy/agent1/dev-ui/
 ↓
@@ -52,6 +53,7 @@ Response: Sets cookie X-Agent-Backend=agent1
 ```
 
 #### Step 2: Root-relative Asset Requests
+
 ```
 Browser: GET /static/js/main.js (with cookie)
 ↓
@@ -65,6 +67,7 @@ Proxy to: http://127.0.0.1:8003/static/js/main.js
 ```
 
 #### Step 3: API Calls & WebSocket
+
 ```
 Browser: POST /api/chat (with cookie)
 ↓
@@ -77,13 +80,13 @@ Proxy to: http://127.0.0.1:8003/api/chat
 
 ### URL Mapping
 
-| Original Request | Filter Action | Controller Action | Backend Request |
-|------------------|---------------|-------------------|-----------------|
-| `/proxy/agent1/dev-ui/` | Skip (already prefixed) | Strip `/proxy/agent1` | `GET /dev-ui/` |
-| `/static/js/main.js` | Rewrite → `/proxy/agent1/static/js/main.js` | Strip `/proxy/agent1` | `GET /static/js/main.js` |
-| `/api/chat` | Rewrite → `/proxy/agent1/api/chat` | Strip `/proxy/agent1` | `POST /api/chat` |
-| `/` | Skip (home) | HomeController | HTML page |
-| `/api/agents` | Skip (API) | AgentManagementController | JSON list |
+| Original Request        | Filter Action                               | Controller Action         | Backend Request          |
+| ----------------------- | ------------------------------------------- | ------------------------- | ------------------------ |
+| `/proxy/agent1/dev-ui/` | Skip (already prefixed)                     | Strip `/proxy/agent1`     | `GET /dev-ui/`           |
+| `/static/js/main.js`    | Rewrite → `/proxy/agent1/static/js/main.js` | Strip `/proxy/agent1`     | `GET /static/js/main.js` |
+| `/api/chat`             | Rewrite → `/proxy/agent1/api/chat`          | Strip `/proxy/agent1`     | `POST /api/chat`         |
+| `/`                     | Skip (home)                                 | HomeController            | HTML page                |
+| `/api/agents`           | Skip (API)                                  | AgentManagementController | JSON list                |
 
 ### Limitation
 
@@ -111,12 +114,12 @@ src/main/java/com/example/agentproxy/
 
 ### Component Responsibilities
 
-| Component | Role | Key Logic |
-|-----------|------|-----------|
-| **AgentCookieRedirectFilter** | Path rewriting | Intercepts `/static/*`, `/api/*` → rewrites to `/proxy/{agent}/...` |
-| **AgentProxyController** | Actual proxying | Handles `/proxy/{agent}/**` → strips prefix → forwards to backend |
-| **BackendResolverService** | Agent discovery | Maps agent names → backend URLs from configuration |
-| **WebClientConfig** | HTTP client | Configures WebClient for proxy requests |
+| Component                     | Role            | Key Logic                                                           |
+| ----------------------------- | --------------- | ------------------------------------------------------------------- |
+| **AgentCookieRedirectFilter** | Path rewriting  | Intercepts `/static/*`, `/api/*` → rewrites to `/proxy/{agent}/...` |
+| **AgentProxyController**      | Actual proxying | Handles `/proxy/{agent}/**` → strips prefix → forwards to backend   |
+| **BackendResolverService**    | Agent discovery | Maps agent names → backend URLs from configuration                  |
+| **WebClientConfig**           | HTTP client     | Configures WebClient for proxy requests                             |
 
 ## Prerequisites
 

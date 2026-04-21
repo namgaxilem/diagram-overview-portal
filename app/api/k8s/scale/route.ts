@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { kubectl } from '../_utils';
 
 export async function POST(request: NextRequest) {
@@ -6,12 +7,17 @@ export async function POST(request: NextRequest) {
     const { type, name, namespace, replicas } = await request.json();
 
     if (!type || !name || !namespace || replicas == null) {
-      return NextResponse.json({ error: 'type, name, namespace, replicas are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'type, name, namespace, replicas are required' },
+        { status: 400 }
+      );
     }
 
     const { stdout } = await kubectl([
-      'scale', `${type}/${name}`,
-      '-n', namespace,
+      'scale',
+      `${type}/${name}`,
+      '-n',
+      namespace,
       `--replicas=${replicas}`,
     ]);
 

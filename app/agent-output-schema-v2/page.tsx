@@ -48,7 +48,9 @@ export default function AgentOutputSchemaV2Page() {
 
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -58,7 +60,7 @@ export default function AgentOutputSchemaV2Page() {
         JSON.parse(content);
         setSchema(content);
         message.success('Schema loaded successfully');
-      } catch (err) {
+      } catch (_err) {
         setJsonError('Invalid JSON file');
         message.error('Invalid JSON file');
       }
@@ -102,7 +104,10 @@ export default function AgentOutputSchemaV2Page() {
             <Button icon={<DownloadOutlined />} onClick={handleDownload}>
               Download JSON
             </Button>
-            <Button icon={<UploadOutlined />} onClick={() => document.getElementById('schema-upload')?.click()}>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => document.getElementById('schema-upload')?.click()}
+            >
               Upload JSON
             </Button>
             <input
@@ -121,11 +126,7 @@ export default function AgentOutputSchemaV2Page() {
           <Divider />
 
           <div className="h-[600px] border border-gray-200 rounded overflow-hidden">
-            <FormBuilder
-              schema={schema}
-              uischema={uischema}
-              onChange={handleChange}
-            />
+            <FormBuilder schema={schema} uischema={uischema} onChange={handleChange} />
           </div>
         </Card>
 

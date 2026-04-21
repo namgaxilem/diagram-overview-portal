@@ -1,4 +1,4 @@
-import { DiagramNode } from "../../config/diagram-config";
+import type { DiagramNode } from '../../config/diagram-config';
 
 export interface LayerProps {
   nodes: DiagramNode[];
@@ -9,8 +9,12 @@ export interface NodeCardProps {
   node: DiagramNode;
   className?: string;
   children?: React.ReactNode;
-  showApiTag?: "above" | "below" | "none";
+  showApiTag?: 'above' | 'below' | 'none';
   showWorkspace?: boolean;
 }
 
-export type ConnectionType = "app-to-gateway" | "gateway-to-middleware" | "middleware-to-backend" | "omw-internal";
+export type ConnectionType =
+  | 'app-to-gateway'
+  | 'gateway-to-middleware'
+  | 'middleware-to-backend'
+  | 'omw-internal';

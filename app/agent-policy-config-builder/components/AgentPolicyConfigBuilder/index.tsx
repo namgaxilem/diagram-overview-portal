@@ -1,21 +1,8 @@
 'use client';
 
-import {
-  CloseOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-} from '@ant-design/icons';
-import {
-  Button,
-  Card,
-  Divider,
-  Input,
-  Select,
-  Space,
-  Tag,
-  Typography,
-} from 'antd';
-import React, { useCallback, useEffect, useState } from 'react';
+import { CloseOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Card, Divider, Input, Select, Space, Tag, Typography } from 'antd';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
@@ -51,9 +38,8 @@ export default function AgentPolicyConfigBuilder({
   onChangePolicyConfig,
   readOnly = false,
 }: AgentPolicyConfigBuilderProps) {
-  const [config, setConfig] = useState<PolicyConfig>(
-    initialPolicyConfig ?? DEFAULT_POLICY_CONFIG,
-  );
+  const prevInitialConfigRef = useRef(initialPolicyConfig);
+  const [config, setConfig] = useState<PolicyConfig>(initialPolicyConfig ?? DEFAULT_POLICY_CONFIG);
 
   // blocked_words input state
   const [newBlockedWord, setNewBlockedWord] = useState('');
@@ -64,7 +50,9 @@ export default function AgentPolicyConfigBuilder({
 
   // Sync from parent when initialPolicyConfig changes reference
   useEffect(() => {
-    if (initialPolicyConfig) {
+    if (initialPolicyConfig && initialPolicyConfig !== prevInitialConfigRef.current) {
+      prevInitialConfigRef.current = initialPolicyConfig;
+
       setConfig(initialPolicyConfig);
     }
   }, [initialPolicyConfig]);
@@ -77,13 +65,11 @@ export default function AgentPolicyConfigBuilder({
         return next;
       });
     },
-    [onChangePolicyConfig],
+    [onChangePolicyConfig]
   );
 
   // --- Safety Instruction ---
-  const handleSafetyInstructionChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>,
-  ) => {
+  const handleSafetyInstructionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateConfig((prev) => ({
       ...prev,
       safety_instruction: e.target.value,
@@ -93,8 +79,12 @@ export default function AgentPolicyConfigBuilder({
   // --- Blocked Words ---
   const handleAddBlockedWord = () => {
     const word = newBlockedWord.trim();
-    if (!word) return;
-    if (config.blocked_words.includes(word)) return;
+    if (!word) {
+      return;
+    }
+    if (config.blocked_words.includes(word)) {
+      return;
+    }
     updateConfig((prev) => ({
       ...prev,
       blocked_words: [...prev.blocked_words, word],
@@ -113,7 +103,9 @@ export default function AgentPolicyConfigBuilder({
   const handleAddPiiPattern = () => {
     const key = newPiiKey.trim();
     const value = newPiiValue.trim();
-    if (!key || !value) return;
+    if (!key || !value) {
+      return;
+    }
     updateConfig((prev) => ({
       ...prev,
       pii_patterns: { ...prev.pii_patterns, [key]: value },
@@ -133,13 +125,9 @@ export default function AgentPolicyConfigBuilder({
   // --- Safety Settings ---
   const [showPendingRow, setShowPendingRow] = useState(false);
 
-  const usedCategories = config.generate_content_config.safety_settings.map(
-    (s) => s.category,
-  );
+  const usedCategories = config.generate_content_config.safety_settings.map((s) => s.category);
 
-  const availableCategories = CATEGORY_OPTIONS.filter(
-    (c) => !usedCategories.includes(c),
-  );
+  const availableCategories = CATEGORY_OPTIONS.filter((c) => !usedCategories.includes(c));
 
   const handleAddSafetySetting = () => {
     setShowPendingRow(true);
@@ -168,9 +156,7 @@ export default function AgentPolicyConfigBuilder({
       ...prev,
       generate_content_config: {
         ...prev.generate_content_config,
-        safety_settings: prev.generate_content_config.safety_settings.filter(
-          (_, i) => i !== index,
-        ),
+        safety_settings: prev.generate_content_config.safety_settings.filter((_, i) => i !== index),
       },
     }));
   };
@@ -189,10 +175,7 @@ export default function AgentPolicyConfigBuilder({
     });
   };
 
-  const handleChangeSafetyThreshold = (
-    index: number,
-    threshold: Threshold,
-  ) => {
+  const handleChangeSafetyThreshold = (index: number, threshold: Threshold) => {
     updateConfig((prev) => {
       const settings = [...prev.generate_content_config.safety_settings];
       settings[index] = { ...settings[index], threshold };
@@ -228,11 +211,7 @@ export default function AgentPolicyConfigBuilder({
         <Text strong>Blocked Words</Text>
         <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {config.blocked_words.map((word) => (
-            <Tag
-              key={word}
-              closable={!readOnly}
-              onClose={() => handleRemoveBlockedWord(word)}
-            >
+            <Tag key={word} closable={!readOnly} onClose={() => handleRemoveBlockedWord(word)}>
               {word}
             </Tag>
           ))}
@@ -245,11 +224,7 @@ export default function AgentPolicyConfigBuilder({
               onPressEnter={handleAddBlockedWord}
               placeholder="Add blocked word"
             />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAddBlockedWord}
-            >
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddBlockedWord}>
               Add
             </Button>
           </Space.Compact>
@@ -317,11 +292,7 @@ export default function AgentPolicyConfigBuilder({
               onPressEnter={handleAddPiiPattern}
               placeholder="Regex pattern"
             />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAddPiiPattern}
-            >
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddPiiPattern}>
               Add
             </Button>
           </Space.Compact>
@@ -357,60 +328,56 @@ export default function AgentPolicyConfigBuilder({
             </Button>
           )}
         </div>
-        {config.generate_content_config.safety_settings.length === 0 &&
-          !showPendingRow && (
-            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
-              No safety settings configured.
-            </Text>
-          )}
-        {config.generate_content_config.safety_settings.map(
-          (setting, index) => {
-            const categoryOptionsForRow = CATEGORY_OPTIONS.filter(
-              (c) =>
-                c === setting.category || !usedCategories.includes(c),
-            );
-            return (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 8,
-                }}
-              >
-                <Select
-                  style={{ flex: 1 }}
-                  value={setting.category}
-                  onChange={(val) => handleChangeSafetyCategory(index, val)}
-                  disabled={readOnly}
-                  options={categoryOptionsForRow.map((c) => ({
-                    label: CATEGORY_LABELS[c],
-                    value: c,
-                  }))}
-                />
-                <Select
-                  style={{ width: 260 }}
-                  value={setting.threshold}
-                  onChange={(val) => handleChangeSafetyThreshold(index, val)}
-                  disabled={readOnly}
-                  options={THRESHOLD_OPTIONS.map((t) => ({
-                    label: THRESHOLD_LABELS[t],
-                    value: t,
-                  }))}
-                />
-                {!readOnly && (
-                  <Button
-                    type="text"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleRemoveSafetySetting(index)}
-                  />
-                )}
-              </div>
-            );
-          },
+        {config.generate_content_config.safety_settings.length === 0 && !showPendingRow && (
+          <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+            No safety settings configured.
+          </Text>
         )}
+        {config.generate_content_config.safety_settings.map((setting, index) => {
+          const categoryOptionsForRow = CATEGORY_OPTIONS.filter(
+            (c) => c === setting.category || !usedCategories.includes(c)
+          );
+          return (
+            <div
+              key={index}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 8,
+              }}
+            >
+              <Select
+                style={{ flex: 1 }}
+                value={setting.category}
+                onChange={(val) => handleChangeSafetyCategory(index, val)}
+                disabled={readOnly}
+                options={categoryOptionsForRow.map((c) => ({
+                  label: CATEGORY_LABELS[c],
+                  value: c,
+                }))}
+              />
+              <Select
+                style={{ width: 260 }}
+                value={setting.threshold}
+                onChange={(val) => handleChangeSafetyThreshold(index, val)}
+                disabled={readOnly}
+                options={THRESHOLD_OPTIONS.map((t) => ({
+                  label: THRESHOLD_LABELS[t],
+                  value: t,
+                }))}
+              />
+              {!readOnly && (
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleRemoveSafetySetting(index)}
+                />
+              )}
+            </div>
+          );
+        })}
         {showPendingRow && (
           <div
             style={{
@@ -438,12 +405,7 @@ export default function AgentPolicyConfigBuilder({
                 value: t,
               }))}
             />
-            <Button
-              type="text"
-              danger
-              icon={<CloseOutlined />}
-              onClick={handleCancelPendingRow}
-            />
+            <Button type="text" danger icon={<CloseOutlined />} onClick={handleCancelPendingRow} />
           </div>
         )}
       </div>

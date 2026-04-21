@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { siteConfig } from "../config/site-config";
+import { useState } from 'react';
+import { siteConfig } from '../config/site-config';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Features", href: "#features" },
-    { name: "Architecture", href: "#architecture" },
+    { name: 'Home', href: '#home' },
+    { name: 'Features', href: '#features' },
+    { name: 'Architecture', href: '#architecture' },
   ];
 
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
-    if (href === "#home") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    if (href === '#home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     const element = document.querySelector(href);
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -45,9 +45,7 @@ export default function Header() {
                 />
               </svg>
             </div>
-            <span className="text-lg font-bold text-gray-900">
-              {siteConfig.name}
-            </span>
+            <span className="text-lg font-bold text-gray-900">{siteConfig.name}</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -75,10 +73,7 @@ export default function Header() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <svg
               className="w-6 h-6 text-gray-600"
               fill="none"

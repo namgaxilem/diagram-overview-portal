@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Modal, InputNumber, Typography, Space, Alert } from 'antd';
 
 const { Text } = Typography;
@@ -27,10 +27,15 @@ export default function ScaleModal({
   loading,
 }: ScaleModalProps) {
   const [replicas, setReplicas] = useState<number>(currentReplicas);
+  const prevOpenRef = useRef(open);
 
+  // Reset replicas when modal opens
   useEffect(() => {
-    setReplicas(currentReplicas);
-  }, [currentReplicas, open]);
+    if (open && !prevOpenRef.current) {
+      setReplicas(currentReplicas);
+    }
+    prevOpenRef.current = open;
+  }, [open, currentReplicas]);
 
   return (
     <Modal
@@ -45,7 +50,9 @@ export default function ScaleModal({
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <div>
           <Text type="secondary">Resource: </Text>
-          <Text strong>{namespace}/{name}</Text>
+          <Text strong>
+            {namespace}/{name}
+          </Text>
         </div>
 
         <div>

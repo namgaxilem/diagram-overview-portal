@@ -1,17 +1,15 @@
-"use client";
+'use client';
 
 interface FirstColProps {
   className?: string;
 }
 
-export default function FirstCol({ className = "" }: FirstColProps) {
+export default function FirstCol({ className = '' }: FirstColProps) {
   return (
     <div className={`flex flex-col ${className}`}>
       {/* Application Layer Label - aligned with App Layer */}
       <div className="h-[120px] flex items-center">
-        <span className="text-xs font-bold text-sky-600 whitespace-nowrap">
-          Application layer
-        </span>
+        <span className="text-xs font-bold text-sky-600 whitespace-nowrap">Application layer</span>
       </div>
 
       {/* Arrow from Application to Middleware */}
@@ -44,9 +42,7 @@ export default function FirstCol({ className = "" }: FirstColProps) {
 
       {/* Middleware Label - aligned with Middleware Layer */}
       <div className="h-[180px] flex items-center">
-        <span className="text-xs font-bold text-sky-600 whitespace-nowrap">
-          Middleware
-        </span>
+        <span className="text-xs font-bold text-sky-600 whitespace-nowrap">Middleware</span>
       </div>
 
       {/* Arrow from Middleware to Backend */}
@@ -79,9 +75,7 @@ export default function FirstCol({ className = "" }: FirstColProps) {
 
       {/* Backend Label - aligned with Backend Layer */}
       <div className="h-[120px] flex items-center">
-        <span className="text-xs font-bold text-sky-600 whitespace-nowrap">
-          Backend
-        </span>
+        <span className="text-xs font-bold text-sky-600 whitespace-nowrap">Backend</span>
       </div>
     </div>
   );

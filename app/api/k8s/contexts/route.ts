@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { kubectl } from '../_utils';
 
 export async function GET() {
@@ -7,13 +8,18 @@ export async function GET() {
     const config = JSON.parse(stdout);
 
     const currentContext = config['current-context'] ?? '';
-    const contexts = (config.contexts ?? []).map((ctx: { name: string; context?: { cluster?: string; user?: string; namespace?: string } }) => ({
-      name: ctx.name,
-      cluster: ctx.context?.cluster ?? '',
-      user: ctx.context?.user ?? '',
-      namespace: ctx.context?.namespace ?? '',
-      isCurrent: ctx.name === currentContext,
-    }));
+    const contexts = (config.contexts ?? []).map(
+      (ctx: {
+        name: string;
+        context?: { cluster?: string; user?: string; namespace?: string };
+      }) => ({
+        name: ctx.name,
+        cluster: ctx.context?.cluster ?? '',
+        user: ctx.context?.user ?? '',
+        namespace: ctx.context?.namespace ?? '',
+        isCurrent: ctx.name === currentContext,
+      })
+    );
 
     return NextResponse.json({ contexts, currentContext });
   } catch (error: unknown) {

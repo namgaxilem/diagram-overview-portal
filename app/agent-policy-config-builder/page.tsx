@@ -3,9 +3,7 @@
 import { CopyOutlined, EyeOutlined } from '@ant-design/icons';
 import { Button, Card, message, Space, Switch, Typography } from 'antd';
 import { useState } from 'react';
-import AgentPolicyConfigBuilder, {
-  type PolicyConfig,
-} from './components/AgentPolicyConfigBuilder';
+import AgentPolicyConfigBuilder, { type PolicyConfig } from './components/AgentPolicyConfigBuilder';
 import initialData from './components/AgentPolicyConfigBuilder/data.json';
 
 const { Title, Text } = Typography;
@@ -13,8 +11,7 @@ const { Title, Text } = Typography;
 const initialPolicyConfig = initialData.policy_config as PolicyConfig;
 
 export default function AgentPolicyConfigBuilderPage() {
-  const [policyConfig, setPolicyConfig] =
-    useState<PolicyConfig>(initialPolicyConfig);
+  const [policyConfig, setPolicyConfig] = useState<PolicyConfig>(initialPolicyConfig);
   const [readOnly, setReadOnly] = useState(false);
   const [configOutput, setConfigOutput] = useState('');
 
@@ -42,9 +39,8 @@ export default function AgentPolicyConfigBuilderPage() {
           Agent Policy Config Builder
         </Title>
         <Text type="secondary">
-          Configure the safety policy for an AI agent, including safety
-          instructions, blocked words, PII patterns, and content generation
-          safety settings.
+          Configure the safety policy for an AI agent, including safety instructions, blocked words,
+          PII patterns, and content generation safety settings.
         </Text>
       </div>
 
@@ -62,11 +58,7 @@ export default function AgentPolicyConfigBuilderPage() {
       />
 
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-        <Button
-          type="primary"
-          icon={<EyeOutlined />}
-          onClick={handleGetConfig}
-        >
+        <Button type="primary" icon={<EyeOutlined />} onClick={handleGetConfig}>
           Get Policy Config
         </Button>
         {configOutput && (
@@ -77,11 +69,7 @@ export default function AgentPolicyConfigBuilderPage() {
       </div>
 
       {configOutput && (
-        <Card
-          title="Retrieved Policy Config Output"
-          style={{ marginTop: 16 }}
-          size="small"
-        >
+        <Card title="Retrieved Policy Config Output" style={{ marginTop: 16 }} size="small">
           <pre
             style={{
               background: '#f6f8fa',
@@ -89,8 +77,7 @@ export default function AgentPolicyConfigBuilderPage() {
               borderRadius: 8,
               padding: 16,
               fontSize: 13,
-              fontFamily:
-                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
               lineHeight: 1.5,
               overflow: 'auto',
               maxHeight: 400,

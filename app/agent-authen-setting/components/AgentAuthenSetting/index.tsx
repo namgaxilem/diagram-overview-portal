@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Form, Card, Tabs, Space, Typography, Divider } from 'antd';
-import type { TabsProps } from 'antd';
+import React, { useState, useRef, useEffect } from 'react';
+import { Form, Card, Tabs, Typography, Divider } from 'antd';
 import AzureADTab from './components/AzureAD';
 import ForgeRockTab from './components/ForgeRock';
 
@@ -31,68 +30,90 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
   readOnly = false,
 }) => {
   const [form] = Form.useForm();
-  const [azureGroups, setAzureGroups] = useState<string[]>([]);
-  const [azureADEnabled, setAzureADEnabled] = useState<boolean>(false);
-  const [forgeRockClientId, setForgeRockClientId] = useState<string>('');
-  const [forgeRockEnabled, setForgeRockEnabled] = useState<boolean>(false);
+  const prevInitSettingsRef = useRef(initSettings);
+  const [azureGroups, setAzureGroups] = useState<string[]>(initSettings?.azureAD?.groups || []);
+  const [azureADEnabled, setAzureADEnabled] = useState<boolean>(
+    initSettings?.azureAD?.enabled || false
+  );
+  const [forgeRockClientId, setForgeRockClientId] = useState<string>(
+    initSettings?.forgeRock?.clientId || ''
+  );
+  const [forgeRockEnabled, setForgeRockEnabled] = useState<boolean>(
+    initSettings?.forgeRock?.enabled || false
+  );
 
-  // Initialize form values from initSettings
+  // Sync form values when initSettings changes
   useEffect(() => {
-    const currentSettings = initSettings;
-    if (currentSettings) {
-      // Update Azure AD
-      const azGroups = currentSettings.azureAD?.groups || [];
-      const azEnabled = currentSettings.azureAD?.enabled || false;
-      setAzureGroups(azGroups);
-      setAzureADEnabled(azEnabled);
-      form.setFieldsValue({
-        azureGroups: azGroups.length > 0 ? azGroups : undefined,
-        azureADEnabled: azEnabled,
-      });
+    if (initSettings !== prevInitSettingsRef.current) {
+      prevInitSettingsRef.current = initSettings;
+      const currentSettings = initSettings;
+      if (currentSettings) {
+        const azGroups = currentSettings.azureAD?.groups || [];
+        const azEnabled = currentSettings.azureAD?.enabled || false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: sync state from props
+        setAzureGroups(azGroups);
 
-      // Update ForgeRock
-      const frClientId = currentSettings.forgeRock?.clientId || '';
-      const frEnabled = currentSettings.forgeRock?.enabled || false;
-      setForgeRockClientId(frClientId);
-      setForgeRockEnabled(frEnabled);
-      form.setFieldsValue({
-        forgeRockClientId: frClientId || undefined,
-        forgeRockEnabled: frEnabled,
-      });
-    } else {
-      // Clear everything if no settings
-      setAzureGroups([]);
-      setAzureADEnabled(false);
-      setForgeRockClientId('');
-      setForgeRockEnabled(false);
-      form.resetFields();
+        setAzureADEnabled(azEnabled);
+        form.setFieldsValue({
+          azureGroups: azGroups.length > 0 ? azGroups : undefined,
+          azureADEnabled: azEnabled,
+        });
+
+        const frClientId = currentSettings.forgeRock?.clientId || '';
+        const frEnabled = currentSettings.forgeRock?.enabled || false;
+
+        setForgeRockClientId(frClientId);
+
+        setForgeRockEnabled(frEnabled);
+        form.setFieldsValue({
+          forgeRockClientId: frClientId || undefined,
+          forgeRockEnabled: frEnabled,
+        });
+      } else {
+        setAzureGroups([]);
+
+        setAzureADEnabled(false);
+
+        setForgeRockClientId('');
+
+        setForgeRockEnabled(false);
+        form.resetFields();
+      }
     }
-  }, [initSettings]);
-
+  }, [initSettings, form]);
 
   // Handle form value changes - both auth methods can be enabled independently
-  const handleValuesChange = (changedValues: any, allValues: any) => {
-    if (readOnly) return;
+  const handleValuesChange = (
+    changedValues: Record<string, unknown>,
+    allValues: Record<string, unknown>
+  ) => {
+    if (readOnly) {
+      return;
+    }
 
     // Update state based on changed values
     if ('azureGroups' in changedValues) {
-      setAzureGroups(allValues.azureGroups || []);
+      setAzureGroups((allValues.azureGroups as string[]) || []);
     }
     if ('azureADEnabled' in changedValues) {
-      setAzureADEnabled(allValues.azureADEnabled || false);
+      setAzureADEnabled((allValues.azureADEnabled as boolean) || false);
     }
     if ('forgeRockClientId' in changedValues) {
-      setForgeRockClientId(allValues.forgeRockClientId?.trim() || '');
+      const clientId = allValues.forgeRockClientId as string | undefined;
+      setForgeRockClientId(clientId?.trim() || '');
     }
     if ('forgeRockEnabled' in changedValues) {
-      setForgeRockEnabled(allValues.forgeRockEnabled || false);
+      setForgeRockEnabled((allValues.forgeRockEnabled as boolean) || false);
     }
 
     // Build settings object with current values
-    const currentAzureGroups = allValues.azureGroups || azureGroups;
-    const currentAzureADEnabled = allValues.azureADEnabled ?? azureADEnabled;
-    const currentForgeRockClientId = allValues.forgeRockClientId?.trim() || forgeRockClientId;
-    const currentForgeRockEnabled = allValues.forgeRockEnabled ?? forgeRockEnabled;
+    const currentAzureGroups = (allValues.azureGroups as string[]) || azureGroups;
+    const currentAzureADEnabled =
+      (allValues.azureADEnabled as boolean | undefined) ?? azureADEnabled;
+    const frClientIdValue = allValues.forgeRockClientId as string | undefined;
+    const currentForgeRockClientId = frClientIdValue?.trim() || forgeRockClientId;
+    const currentForgeRockEnabled =
+      (allValues.forgeRockEnabled as boolean | undefined) ?? forgeRockEnabled;
 
     const newSettings: AuthenticationSettings = {};
 
@@ -118,17 +139,24 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
     }
   };
 
-
-  const items: TabsProps['items'] = [
+  const items = [
     {
       key: 'azureAD',
       label: 'Azure AD',
-      children: <AzureADTab azureGroups={azureGroups} enabled={azureADEnabled} readOnly={readOnly} />,
+      children: (
+        <AzureADTab azureGroups={azureGroups} enabled={azureADEnabled} readOnly={readOnly} />
+      ),
     },
     {
       key: 'forgeRock',
       label: 'ForgeRock',
-      children: <ForgeRockTab forgeRockClientId={forgeRockClientId} enabled={forgeRockEnabled} readOnly={readOnly} />,
+      children: (
+        <ForgeRockTab
+          forgeRockClientId={forgeRockClientId}
+          enabled={forgeRockEnabled}
+          readOnly={readOnly}
+        />
+      ),
     },
   ];
 
@@ -137,30 +165,26 @@ const AgentAuthenSetting: React.FC<AgentAuthenSettingProps> = ({
       <Card>
         <Title level={4}>Authentication Settings</Title>
         <Text type="secondary">
-          Configure authentication methods for your agent. You can enable both, one, or neither authentication method.
-          The agent will enforce authentication based on these settings when running in FastAPI.
+          Configure authentication methods for your agent. You can enable both, one, or neither
+          authentication method. The agent will enforce authentication based on these settings when
+          running in FastAPI.
         </Text>
         {(azureADEnabled || forgeRockEnabled) && (
           <div style={{ marginTop: '12px' }}>
             <Text strong>Active Methods: </Text>
-            {azureADEnabled && <Text code style={{ marginRight: '8px' }}>Azure AD Groups</Text>}
+            {azureADEnabled && (
+              <Text code style={{ marginRight: '8px' }}>
+                Azure AD Groups
+              </Text>
+            )}
             {forgeRockEnabled && <Text code>ForgeRock OAuth</Text>}
           </div>
         )}
 
         <Divider />
 
-        <Form
-          form={form}
-          layout="vertical"
-          onValuesChange={handleValuesChange}
-          disabled={readOnly}
-        >
-          <Tabs
-            defaultActiveKey="azureAD"
-            items={items}
-            type="card"
-          />
+        <Form form={form} layout="vertical" onValuesChange={handleValuesChange} disabled={readOnly}>
+          <Tabs defaultActiveKey="azureAD" items={items} type="card" />
         </Form>
 
         {readOnly && (

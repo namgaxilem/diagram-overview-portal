@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 
 interface GatewayNodeData {
   label: string;
@@ -10,7 +10,7 @@ interface GatewayNodeData {
 
 export function GatewayNode({ data }: NodeProps) {
   const nodeData = data as unknown as GatewayNodeData;
-  
+
   return (
     <div className="relative">
       <Handle type="target" position={Position.Top} className="!bg-sky-500 !w-2 !h-2" />

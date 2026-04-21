@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { diagramConfig } from "../../config/diagram-config";
-import DiagramFlow from "./DiagramFlow";
+import { diagramConfig } from '../../config/diagram-config';
+import DiagramFlow from './DiagramFlow';
 
 export default function ArchitectureDiagramV4() {
   const config = diagramConfig;
@@ -12,7 +12,7 @@ export default function ArchitectureDiagramV4() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold">
-            <span className="text-slate-800">{config.title}</span>{" "}
+            <span className="text-slate-800">{config.title}</span>{' '}
             <span className="text-sky-600">{config.subtitle}</span>
           </h1>
         </div>

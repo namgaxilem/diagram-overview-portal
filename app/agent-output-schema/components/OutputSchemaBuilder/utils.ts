@@ -51,7 +51,9 @@ export function fieldsToJsonSchema(
 
   for (const field of fields) {
     const trimmedName = field.name.trim();
-    if (!trimmedName) continue;
+    if (!trimmedName) {
+      continue;
+    }
 
     const prop: Record<string, unknown> = { type: field.type };
 
@@ -61,10 +63,7 @@ export function fieldsToJsonSchema(
 
     if (field.type === 'object' && field.properties.length > 0) {
       const nested = fieldsToJsonSchema(field.properties);
-      if (
-        nested.properties &&
-        Object.keys(nested.properties as object).length > 0
-      ) {
+      if (nested.properties && Object.keys(nested.properties as object).length > 0) {
         prop.properties = nested.properties;
       }
       if (nested.required && (nested.required as string[]).length > 0) {
@@ -114,13 +113,12 @@ export function fieldsToJsonSchema(
   return schema;
 }
 
-export function jsonSchemaToFields(
-  schema: Record<string, unknown>
-): { fields: SchemaField[]; metadata: Record<string, unknown> } {
+export function jsonSchemaToFields(schema: Record<string, unknown>): {
+  fields: SchemaField[];
+  metadata: Record<string, unknown>;
+} {
   const fields: SchemaField[] = [];
-  const properties = schema.properties as
-    | Record<string, Record<string, unknown>>
-    | undefined;
+  const properties = schema.properties as Record<string, Record<string, unknown>> | undefined;
   const required = (schema.required as string[]) || [];
 
   // Extract metadata (everything except properties, required, type)
@@ -131,7 +129,9 @@ export function jsonSchemaToFields(
     }
   }
 
-  if (!properties) return { fields, metadata };
+  if (!properties) {
+    return { fields, metadata };
+  }
 
   for (const [name, prop] of Object.entries(properties)) {
     const field = createEmptyField();
@@ -141,9 +141,7 @@ export function jsonSchemaToFields(
     field.required = required.includes(name);
 
     if (field.type === 'object' && prop.properties) {
-      const result = jsonSchemaToFields(
-        prop as Record<string, unknown>
-      );
+      const result = jsonSchemaToFields(prop as Record<string, unknown>);
       field.properties = result.fields;
     }
 
@@ -168,9 +166,11 @@ export function jsonSchemaToFields(
   return { fields, metadata };
 }
 
-export function validateJsonSchema(
-  jsonString: string
-): { valid: boolean; error?: string; schema?: Record<string, unknown> } {
+export function validateJsonSchema(jsonString: string): {
+  valid: boolean;
+  error?: string;
+  schema?: Record<string, unknown>;
+} {
   try {
     const parsed = JSON.parse(jsonString);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {

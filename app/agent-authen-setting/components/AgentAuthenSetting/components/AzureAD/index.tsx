@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Select, Card, Space, Typography, Divider, Checkbox } from 'antd';
+import { Form, Select, Card, Space, Typography, Checkbox } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -10,8 +10,8 @@ interface AzureADTabProps {
 }
 
 const AzureADTab: React.FC<AzureADTabProps> = ({
-  azureGroups,
-  enabled,
+  azureGroups: _azureGroups,
+  enabled: _enabled,
   readOnly,
 }) => {
   return (
@@ -24,10 +24,7 @@ const AzureADTab: React.FC<AzureADTabProps> = ({
           </Text>
         </div>
 
-        <Form.Item
-          name="azureADEnabled"
-          valuePropName="checked"
-        >
+        <Form.Item name="azureADEnabled" valuePropName="checked">
           <Checkbox disabled={readOnly}>
             <Text strong>Enable Azure AD Authentication</Text>
           </Checkbox>

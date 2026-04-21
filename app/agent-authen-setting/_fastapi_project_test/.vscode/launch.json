@@ -1,46 +1,36 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "FastAPI: Run Server",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "app.main.main:app",
-                "--reload",
-                "--port",
-                "8001"
-            ],
-            "jinja": true,
-            "justMyCode": false,
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "FastAPI: Run Server (port 8000)",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "app.main.main:app",
-                "--reload",
-                "--port",
-                "8000"
-            ],
-            "jinja": true,
-            "justMyCode": false,
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Python: Test Tokens",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "app.test.test_tokens",
-            "justMyCode": false,
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FastAPI: Run Server",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main.main:app", "--reload", "--port", "8001"],
+      "jinja": true,
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "FastAPI: Run Server (port 8000)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main.main:app", "--reload", "--port", "8000"],
+      "jinja": true,
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Test Tokens",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.test.test_tokens",
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
 }

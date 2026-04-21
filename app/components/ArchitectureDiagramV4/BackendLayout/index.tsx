@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { DiagramNode } from "../../../config/diagram-config";
-import { NodeCard } from "../shared/NodeCard";
+import type { DiagramNode } from '../../../config/diagram-config';
+import { NodeCard } from '../shared/NodeCard';
 
 interface BackendLayerProps {
   nodes: DiagramNode[];
@@ -18,9 +18,9 @@ export default function BackendLayer({ nodes }: BackendLayerProps) {
       {/* Backend Components */}
       <div className="flex items-center justify-center gap-6">
         {nodes.map((node) => {
-          let bgClass = "border-sky-500 bg-sky-500 text-white hover:bg-sky-600";
-          if (node.id === "kbs") {
-            bgClass = "border-purple-600 bg-purple-600 text-white hover:bg-purple-700";
+          let bgClass = 'border-sky-500 bg-sky-500 text-white hover:bg-sky-600';
+          if (node.id === 'kbs') {
+            bgClass = 'border-purple-600 bg-purple-600 text-white hover:bg-purple-700';
           }
 
           return (

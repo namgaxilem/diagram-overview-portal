@@ -11,8 +11,8 @@ export default function SystemArchitecture() {
           </h2>
           <div className="w-12 h-1 bg-emerald-500 mx-auto mb-6" />
           <p className="max-w-2xl mx-auto text-gray-600">
-            A multi-tiered infrastructure connecting applications, middleware
-            services, and backend systems for seamless workspace orchestration.
+            A multi-tiered infrastructure connecting applications, middleware services, and backend
+            systems for seamless workspace orchestration.
           </p>
         </div>
 

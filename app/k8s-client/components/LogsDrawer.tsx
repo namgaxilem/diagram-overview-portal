@@ -15,16 +15,19 @@ interface LogsDrawerProps {
 }
 
 export default function LogsDrawer({ open, pod, namespace, containers, onClose }: LogsDrawerProps) {
-  const [container, setContainer] = useState<string>('');
+  const [container, setContainer] = useState<string>(containers[0] ?? '');
   const [tail, setTail] = useState<number>(200);
   const [previous, setPrevious] = useState(false);
   const [logs, setLogs] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const logsRef = useRef<HTMLPreElement>(null);
+  const prevOpenRef = useRef(open);
 
   const fetchLogs = useCallback(async () => {
-    if (!pod) return;
+    if (!pod) {
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -34,7 +37,9 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
         tail: String(tail),
         previous: String(previous),
       });
-      if (container) params.set('container', container);
+      if (container) {
+        params.set('container', container);
+      }
 
       const res = await fetch(`/api/k8s/logs?${params}`);
       const data = await res.json();
@@ -52,11 +57,13 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
     }
   }, [pod, namespace, container, tail, previous]);
 
+  // Reset container and fetch logs when drawer opens
   useEffect(() => {
-    if (open && pod) {
+    if (open && pod && !prevOpenRef.current) {
       setContainer(containers[0] ?? '');
       fetchLogs();
     }
+    prevOpenRef.current = open;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pod]);
 
@@ -76,22 +83,42 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
       title={
         <Space>
           <span>📄 Logs:</span>
-          <Text strong style={{ fontFamily: 'monospace' }}>{pod}</Text>
+          <Text strong style={{ fontFamily: 'monospace' }}>
+            {pod}
+          </Text>
         </Space>
       }
       onClose={onClose}
       style={{ minWidth: '60%' }}
       extra={
         <Space>
-          <Button icon={<CopyOutlined />} onClick={handleCopy} disabled={!logs} size="small">Copy</Button>
-          <Button icon={<VerticalAlignBottomOutlined />} onClick={scrollToBottom} size="small">Bottom</Button>
-          <Button icon={<ReloadOutlined />} onClick={fetchLogs} loading={loading} type="primary" size="small">Refresh</Button>
+          <Button icon={<CopyOutlined />} onClick={handleCopy} disabled={!logs} size="small">
+            Copy
+          </Button>
+          <Button icon={<VerticalAlignBottomOutlined />} onClick={scrollToBottom} size="small">
+            Bottom
+          </Button>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={fetchLogs}
+            loading={loading}
+            type="primary"
+            size="small"
+          >
+            Refresh
+          </Button>
         </Space>
       }
       styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column' } }}
     >
       {/* Controls */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', backgroundColor: '#fafafa' }}>
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #f0f0f0',
+          backgroundColor: '#fafafa',
+        }}
+      >
         <Space wrap>
           {containers.length > 1 && (
             <Space size="small">
@@ -99,7 +126,7 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
               <Select
                 value={container}
                 onChange={setContainer}
-                options={containers.map(c => ({ label: c, value: c }))}
+                options={containers.map((c) => ({ label: c, value: c }))}
                 style={{ minWidth: 140 }}
                 size="small"
               />
@@ -130,16 +157,21 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
       {/* Log output */}
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         {loading && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 10,
+            }}
+          >
             <Spin size="large" />
           </div>
         )}
-        {error && (
-          <Alert type="error" message={error} style={{ margin: 12 }} />
-        )}
+        {error && <Alert type="error" message={error} style={{ margin: 12 }} />}
         <pre
           ref={logsRef}
           style={{

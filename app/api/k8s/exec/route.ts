@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { kubectl } from '../_utils';
 
 export async function POST(request: NextRequest) {
@@ -10,8 +11,12 @@ export async function POST(request: NextRequest) {
     }
 
     const args = ['exec', pod];
-    if (namespace) args.push('-n', namespace);
-    if (container) args.push('-c', container);
+    if (namespace) {
+      args.push('-n', namespace);
+    }
+    if (container) {
+      args.push('-c', container);
+    }
     args.push('--', 'sh', '-c', command);
 
     const { stdout, stderr } = await kubectl(args, { timeout: 30000 });
@@ -23,10 +28,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const err = error as { message?: string; stdout?: string; stderr?: string; code?: number };
-    return NextResponse.json({
-      stdout: err.stdout ?? '',
-      stderr: err.stderr ?? err.message ?? 'Command failed',
-      exitCode: err.code ?? 1,
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        stdout: err.stdout ?? '',
+        stderr: err.stderr ?? err.message ?? 'Command failed',
+        exitCode: err.code ?? 1,
+      },
+      { status: 200 }
+    );
   }
 }

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { DiagramConfig } from "../../../config/diagram-config";
-import AppLayer from "../AppLayer";
-import MiddlewareLayer from "../MiddlewareLayer";
-import BackendLayout from "../BackendLayout";
+import type { DiagramConfig } from '../../../config/diagram-config';
+import AppLayer from '../AppLayer';
+import MiddlewareLayer from '../MiddlewareLayer';
+import BackendLayout from '../BackendLayout';
 
 interface SecondColProps {
   config: DiagramConfig;
@@ -13,10 +13,7 @@ export default function SecondCol({ config }: SecondColProps) {
   return (
     <div className="flex flex-col flex-1">
       {/* Application Layer */}
-      <AppLayer 
-        nodes={config.applicationLayer} 
-        apiGateway={config.apiGateway}
-      />
+      <AppLayer nodes={config.applicationLayer} apiGateway={config.apiGateway} />
 
       {/* Arrow transition from App to Middleware */}
       <div className="h-[40px]" />
@@ -40,13 +37,13 @@ export default function SecondCol({ config }: SecondColProps) {
             </marker>
           </defs>
           {/* OMW vertical line down to backend */}
-          <line 
-            x1="7%" 
-            y1="0" 
-            x2="7%" 
-            y2="100%" 
-            stroke="#0ea5e9" 
-            strokeWidth="2" 
+          <line
+            x1="7%"
+            y1="0"
+            x2="7%"
+            y2="100%"
+            stroke="#0ea5e9"
+            strokeWidth="2"
             strokeDasharray="6,3"
             markerEnd="url(#arrowhead-to-backend)"
           />

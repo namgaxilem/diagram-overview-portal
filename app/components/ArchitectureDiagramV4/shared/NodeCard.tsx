@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { DiagramNode } from "../../../config/diagram-config";
+import type { DiagramNode } from '../../../config/diagram-config';
 
 interface NodeCardProps {
   node: DiagramNode;
@@ -9,7 +9,7 @@ interface NodeCardProps {
   dataNodeId?: string;
 }
 
-export function NodeCard({ node, className = "", children, dataNodeId }: NodeCardProps) {
+export function NodeCard({ node, className = '', children, dataNodeId }: NodeCardProps) {
   return (
     <a
       href={node.url}
@@ -19,9 +19,7 @@ export function NodeCard({ node, className = "", children, dataNodeId }: NodeCar
       data-node-id={dataNodeId || node.id}
     >
       <div className="font-semibold text-xs leading-tight">{node.label}</div>
-      {node.sublabel && (
-        <div className="text-[10px] opacity-90 mt-1">{node.sublabel}</div>
-      )}
+      {node.sublabel && <div className="text-[10px] opacity-90 mt-1">{node.sublabel}</div>}
       {children}
     </a>
   );
@@ -48,7 +46,5 @@ export function ApiTagBelow() {
 }
 
 export function WorkspaceTag() {
-  return (
-    <div className="mt-1 text-[9px] opacity-80">[workspace]</div>
-  );
+  return <div className="mt-1 text-[9px] opacity-80">[workspace]</div>;
 }

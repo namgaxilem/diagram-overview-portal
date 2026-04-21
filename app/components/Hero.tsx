@@ -1,6 +1,9 @@
 export default function Hero() {
   return (
-    <section id="home" className="relative bg-gradient-to-b from-white to-gray-50 py-20 lg:py-28 overflow-hidden">
+    <section
+      id="home"
+      className="relative bg-gradient-to-b from-white to-gray-50 py-20 lg:py-28 overflow-hidden"
+    >
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-100 rounded-full opacity-30 blur-3xl" />
@@ -11,9 +14,7 @@ export default function Hero() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full mb-8">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-emerald-700">
-            ENTERPRISE WORKSPACE PORTAL
-          </span>
+          <span className="text-sm font-medium text-emerald-700">ENTERPRISE WORKSPACE PORTAL</span>
         </div>
 
         {/* Main Heading */}
@@ -25,9 +26,8 @@ export default function Hero() {
 
         {/* Subtitle */}
         <p className="max-w-2xl mx-auto text-lg text-gray-600 mb-10">
-          A unified portal for managing organizational workspaces, onboarding
-          applications, and service integrations. Built for multi-tenant
-          environments with enterprise-grade security.
+          A unified portal for managing organizational workspaces, onboarding applications, and
+          service integrations. Built for multi-tenant environments with enterprise-grade security.
         </p>
 
         {/* CTA Buttons */}

@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from '@xyflow/react';
 
 interface BackendNodeData {
   label: string;
   sublabel?: string;
   url: string;
-  variant?: "kbs" | "mcp-servers" | "default";
+  variant?: 'kbs' | 'mcp-servers' | 'default';
 }
 
 export function BackendNode({ data }: NodeProps) {
   const nodeData = data as unknown as BackendNodeData;
 
-  let bgClass = "border-sky-500 bg-sky-500 hover:bg-sky-600";
-  if (nodeData.variant === "kbs") {
-    bgClass = "border-purple-600 bg-purple-600 hover:bg-purple-700";
-  } else if (nodeData.variant === "mcp-servers") {
-    bgClass = "border-blue-500 bg-blue-500 hover:bg-blue-700";
+  let bgClass = 'border-sky-500 bg-sky-500 hover:bg-sky-600';
+  if (nodeData.variant === 'kbs') {
+    bgClass = 'border-purple-600 bg-purple-600 hover:bg-purple-700';
+  } else if (nodeData.variant === 'mcp-servers') {
+    bgClass = 'border-blue-500 bg-blue-500 hover:bg-blue-700';
   }
 
   return (

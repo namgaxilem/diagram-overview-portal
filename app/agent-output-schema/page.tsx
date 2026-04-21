@@ -14,7 +14,7 @@ export default function AgentOutputSchemaPage() {
   const [schemaOutput, setSchemaOutput] = useState<string>('');
 
   // Fetch schema from API
-  const handleFetchSchema = async (prompt: string): Promise<string> => {
+  const _handleFetchSchema = async (prompt: string): Promise<string> => {
     try {
       // Replace this URL with your actual API endpoint
       // Pass prompt to the API (e.g., as query param or in request body)
@@ -62,9 +62,8 @@ export default function AgentOutputSchemaPage() {
           Agent Output Schema Builder
         </Title>
         <Text type="secondary">
-          Define the structured output schema that an agent must follow when
-          generating responses. This ensures consistent, machine-readable
-          output for downstream workflow integration.
+          Define the structured output schema that an agent must follow when generating responses.
+          This ensures consistent, machine-readable output for downstream workflow integration.
         </Text>
       </div>
 
@@ -75,15 +74,11 @@ export default function AgentOutputSchemaPage() {
         // onFetchSchema={handleFetchSchema}
         // readOnly={true}
         isAllRequired={true}
-        initOutputSchema={"invalidvaluejson"}
+        initOutputSchema={'invalidvaluejson'}
       />
 
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-        <Button
-          type="primary"
-          icon={<EyeOutlined />}
-          onClick={handleGetSchema}
-        >
+        <Button type="primary" icon={<EyeOutlined />} onClick={handleGetSchema}>
           Get Schema Value
         </Button>
         {schemaOutput && (
@@ -94,11 +89,7 @@ export default function AgentOutputSchemaPage() {
       </div>
 
       {schemaOutput && (
-        <Card
-          title="Retrieved Schema Output"
-          style={{ marginTop: 16 }}
-          size="small"
-        >
+        <Card title="Retrieved Schema Output" style={{ marginTop: 16 }} size="small">
           <pre
             style={{
               background: '#f6f8fa',
@@ -106,8 +97,7 @@ export default function AgentOutputSchemaPage() {
               borderRadius: 8,
               padding: 16,
               fontSize: 13,
-              fontFamily:
-                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
               lineHeight: 1.5,
               overflow: 'auto',
               maxHeight: 400,
