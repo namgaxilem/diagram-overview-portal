@@ -4,6 +4,11 @@ import Link from 'next/link';
 export default function Home() {
   const routes = [
     {
+      path: '/admin-layout-1',
+      title: 'Admin Layout 1',
+      description: 'Modern admin interface with sidebar navigation, settings, and dashboard',
+    },
+    {
       path: '/agent-detail-page',
       title: 'Agent Detail Page',
       description: 'Complete agent management interface with tabs, configuration, and monitoring',

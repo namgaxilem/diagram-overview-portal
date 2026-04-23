@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,18 +51,6 @@ public class AgentProxyController {
     public AgentProxyController(BackendResolverService resolverService, WebClient webClient) {
         this.resolverService = resolverService;
         this.webClient = webClient;
-    }
-
-    // ─── Global error handler for this controller ────────────────────
-
-    @ExceptionHandler(Exception.class)
-    public void handleError(Exception ex, HttpServletResponse response) throws IOException {
-        log.error("[proxy] Unhandled exception: {}", ex.getMessage(), ex);
-        if (!response.isCommitted()) {
-            response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
-            response.setContentType("text/plain");
-            response.getWriter().write("502 Bad Gateway: " + ex.getMessage());
-        }
     }
 
     // ─── Agent routes ──────────────────────────────────────────────────
