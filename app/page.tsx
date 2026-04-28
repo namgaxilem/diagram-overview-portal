@@ -48,6 +48,11 @@ export default function Home() {
       title: 'Registry Landing Page',
       description: 'Project overview, architecture diagram, and features showcase',
     },
+    {
+      path: '/searchportal-landing-page',
+      title: 'Search Portal Landing Page',
+      description: 'Intelligent Search platform landing page with animated chat demo',
+    },
   ];
 
   return (

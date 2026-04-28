@@ -19,7 +19,7 @@
     "@ginkgo-bioworks/react-json-schema-form-builder": "^4.1.0",
     "@mui/material": "^7.3.10",
     "@xyflow/react": "^12.10.2",
-    "antd": "^6.3.6",
+    "antd": "^6.3.7",
     "axios": "^1.15.2",
     "next": "16.1.6",
     "react": "19.2.3",
