@@ -80,16 +80,9 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
   return (
     <Drawer
       open={open}
-      title={
-        <Space>
-          <span>📄 Logs:</span>
-          <Text strong style={{ fontFamily: 'monospace' }}>
-            {pod}
-          </Text>
-        </Space>
-      }
+      title="📄 Pod Logs"
       onClose={onClose}
-      style={{ minWidth: '60%' }}
+      width="75%"
       extra={
         <Space>
           <Button icon={<CopyOutlined />} onClick={handleCopy} disabled={!logs} size="small">
@@ -109,20 +102,39 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
           </Button>
         </Space>
       }
-      styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column' } }}
+      styles={{
+        header: { backgroundColor: '#161b22', borderBottom: '1px solid #30363d', color: '#c9d1d9' },
+        body: { padding: 0, display: 'flex', flexDirection: 'column' },
+      }}
     >
+      {/* Pod Name Row */}
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #303030',
+          backgroundColor: '#1a1a1a',
+        }}
+      >
+        <Space direction="vertical" size={0} style={{ width: '100%' }}>
+          <Text type="secondary" style={{ fontSize: 11, color: '#8b949e' }}>POD</Text>
+          <Text strong style={{ fontFamily: 'monospace', fontSize: 14, color: '#58a6ff', wordBreak: 'break-all' }}>
+            {pod}
+          </Text>
+        </Space>
+      </div>
+
       {/* Controls */}
       <div
         style={{
           padding: '12px 16px',
-          borderBottom: '1px solid #f0f0f0',
-          backgroundColor: '#fafafa',
+          borderBottom: '1px solid #303030',
+          backgroundColor: '#161b22',
         }}
       >
         <Space wrap>
           {containers.length > 1 && (
             <Space size="small">
-              <Text type="secondary">Container:</Text>
+              <Text type="secondary" style={{ color: '#8b949e' }}>Container:</Text>
               <Select
                 value={container}
                 onChange={setContainer}
@@ -133,7 +145,7 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
             </Space>
           )}
           <Space size="small">
-            <Text type="secondary">Tail:</Text>
+            <Text type="secondary" style={{ color: '#8b949e' }}>Tail:</Text>
             <InputNumber
               min={10}
               max={5000}
@@ -145,7 +157,7 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
             />
           </Space>
           <Space size="small">
-            <Text type="secondary">Previous:</Text>
+            <Text type="secondary" style={{ color: '#8b949e' }}>Previous:</Text>
             <Switch checked={previous} onChange={setPrevious} size="small" />
           </Space>
           <Button size="small" type="default" onClick={fetchLogs} loading={loading}>

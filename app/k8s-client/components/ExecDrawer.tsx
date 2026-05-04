@@ -136,7 +136,11 @@ export default function ExecDrawer({ open, pod, namespace, containers, onClose }
         </Space>
       }
       onClose={onClose}
-      style={{ minWidth: '55%' }}
+      width="70%"
+      styles={{
+        header: { backgroundColor: '#161b22', borderBottom: '1px solid #30363d', color: '#c9d1d9' },
+        body: { padding: 0, display: 'flex', flexDirection: 'column' },
+      }}
       extra={
         <Space>
           <Button
@@ -158,19 +162,34 @@ export default function ExecDrawer({ open, pod, namespace, containers, onClose }
           </Button>
         </Space>
       }
-      styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column' } }}
     >
+      {/* Pod Name Row */}
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #30363d',
+          backgroundColor: '#1a1a1a',
+        }}
+      >
+        <Space direction="vertical" size={0} style={{ width: '100%' }}>
+          <Text style={{ fontSize: 11, color: '#8b949e' }}>POD</Text>
+          <Text strong style={{ fontFamily: 'monospace', fontSize: 14, color: '#58a6ff', wordBreak: 'break-all' }}>
+            {pod}
+          </Text>
+        </Space>
+      </div>
+
       {/* Container selector */}
       {containers.length > 1 && (
         <div
           style={{
             padding: '10px 16px',
-            borderBottom: '1px solid #f0f0f0',
-            backgroundColor: '#fafafa',
+            borderBottom: '1px solid #30363d',
+            backgroundColor: '#161b22',
           }}
         >
           <Space size="small">
-            <Text type="secondary">Container:</Text>
+            <Text style={{ color: '#8b949e' }}>Container:</Text>
             <Select
               value={container}
               onChange={setContainer}

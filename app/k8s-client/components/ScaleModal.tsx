@@ -40,28 +40,34 @@ export default function ScaleModal({
   return (
     <Modal
       open={open}
-      title={`⚖️ Scale ${resourceType}`}
+      title={<span style={{ color: '#c9d1d9' }}>⚖️ Scale {resourceType}</span>}
       onCancel={onClose}
       onOk={() => onConfirm(replicas)}
       okText="Scale"
       confirmLoading={loading}
       okButtonProps={{ disabled: replicas === currentReplicas }}
+      styles={{
+        header: { backgroundColor: '#161b22', borderBottom: '1px solid #30363d' },
+        body: { backgroundColor: '#0d1117', padding: '20px 24px' },
+        footer: { backgroundColor: '#161b22', borderTop: '1px solid #30363d' },
+      }}
+      className="dark-modal"
     >
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <div>
-          <Text type="secondary">Resource: </Text>
-          <Text strong>
+          <Text style={{ color: '#8b949e' }}>Resource: </Text>
+          <Text strong style={{ color: '#c9d1d9' }}>
             {namespace}/{name}
           </Text>
         </div>
 
         <div>
-          <Text type="secondary">Current replicas: </Text>
-          <Text strong>{currentReplicas}</Text>
+          <Text style={{ color: '#8b949e' }}>Current replicas: </Text>
+          <Text strong style={{ color: '#c9d1d9' }}>{currentReplicas}</Text>
         </div>
 
         <div>
-          <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+          <Text style={{ display: 'block', marginBottom: 8, color: '#8b949e' }}>
             New replica count:
           </Text>
           <InputNumber

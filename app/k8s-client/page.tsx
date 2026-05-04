@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import './k8s-dark.css';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Layout,
   Select,
@@ -141,6 +142,15 @@ export default function K8sClientPage() {
   const [resLoading, setResLoading] = useState(false);
   const [resError, setResError] = useState('');
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
   // drawers / modals
   const [logsState, setLogsState] = useState<LogsState>({
@@ -580,21 +590,22 @@ export default function K8sClientPage() {
 
   // ── Derived data ──────────────────────────────────────────────────────────────
 
-  const filtered = searchText
-    ? resources.filter((r) =>
-        Object.values(r).some((v) =>
-          String(v ?? '')
-            .toLowerCase()
-            .includes(searchText.toLowerCase())
-        )
+  const filtered = useMemo(() => {
+    if (!debouncedSearch) return resources;
+    const lower = debouncedSearch.toLowerCase();
+    return resources.filter((r) =>
+      Object.values(r).some((v) =>
+        String(v ?? '').toLowerCase().includes(lower)
       )
-    : resources;
+    );
+  }, [resources, debouncedSearch]);
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <Layout style={{ minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
-      {notifHolder}
+    <div className="dark">
+      <Layout style={{ minHeight: '100vh', backgroundColor: '#0d1117' }}>
+        {notifHolder}
 
       {/* ── Header ── */}
       <Header
@@ -602,7 +613,7 @@ export default function K8sClientPage() {
           display: 'flex',
           alignItems: 'center',
           gap: 16,
-          backgroundColor: '#001529',
+          backgroundColor: '#161b22',
           padding: '0 24px',
           position: 'sticky',
           top: 0,
@@ -690,13 +701,13 @@ export default function K8sClientPage() {
         {/* Tabs + search bar */}
         <div
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: '#161b22',
             borderRadius: 8,
             padding: '0 16px',
             marginBottom: 12,
             display: 'flex',
             alignItems: 'center',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            border: '1px solid #30363d',
             overflow: 'hidden',
           }}
         >
@@ -729,17 +740,17 @@ export default function K8sClientPage() {
             alignItems: 'center',
           }}
         >
-          <Text type="secondary" style={{ fontSize: 12 }}>
+          <Text style={{ fontSize: 12, color: '#8b949e' }}>
             {resLoading ? (
               'Loading…'
             ) : (
               <>
-                <Text strong style={{ fontSize: 12 }}>
+                <Text strong style={{ fontSize: 12, color: '#c9d1d9' }}>
                   {filtered.length}
                 </Text>{' '}
                 resource(s)
                 {searchText && <> matching &ldquo;{searchText}&rdquo;</>} in{' '}
-                <Text code style={{ fontSize: 12 }}>
+                <Text code style={{ fontSize: 12, color: '#58a6ff', backgroundColor: '#21262d' }}>
                   {currentNamespace === '__all__' ? 'all namespaces' : currentNamespace}
                 </Text>
               </>
@@ -784,10 +795,11 @@ export default function K8sClientPage() {
             showTotal: (t) => `Total ${t}`,
           }}
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: '#161b22',
             borderRadius: 8,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            border: '1px solid #30363d',
           }}
+          className="dark-table"
         />
       </Content>
 
@@ -823,6 +835,7 @@ export default function K8sClientPage() {
         onClose={() => setScaleState((p) => ({ ...p, open: false }))}
         loading={scaleLoading}
       />
-    </Layout>
+      </Layout>
+    </div>
   );
 }

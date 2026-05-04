@@ -34,9 +34,7 @@ export default function DescribeModal({
     <Modal
       open={open}
       title={
-        <Space>
-          <span>📋 Describe: {title}</span>
-        </Space>
+        <span style={{ color: '#c9d1d9' }}>📋 Describe: {title}</span>
       }
       onCancel={onClose}
       footer={
@@ -54,7 +52,12 @@ export default function DescribeModal({
         </Space>
       }
       width={900}
-      styles={{ body: { padding: 0 } }}
+      styles={{
+        header: { backgroundColor: '#161b22', borderBottom: '1px solid #30363d' },
+        body: { padding: 0, backgroundColor: '#0d1117' },
+        footer: { backgroundColor: '#161b22', borderTop: '1px solid #30363d' },
+      }}
+      className="dark-modal"
     >
       {loading ? (
         <div style={{ padding: 24, textAlign: 'center' }}>
