@@ -53,6 +53,11 @@ export default function Home() {
       title: 'Search Portal Landing Page',
       description: 'Intelligent Search platform landing page with animated chat demo',
     },
+    {
+      path: '/test-crawl',
+      title: 'Crawler Test Pages',
+      description: 'Test pages with various meta tags, structured data, and rich content for web crawler testing',
+    },
   ];
 
   return (
