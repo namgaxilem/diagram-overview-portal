@@ -11,27 +11,21 @@ const LOCAL_STORAGE_KEY = 'crawler-meta-tag-config';
 const DEFAULT_META_TAGS: MetaTagItem[] = [
   {
     id: 'default-1',
-    name: 'description',
-    type: 'standard',
-    attribute: 'name',
-    required: true,
-    description: 'Page description for search engines',
+    attributeKey: 'name',
+    attributeKeyValueToScrape: 'description',
+    attributeValueToScrape: 'content',
   },
   {
     id: 'default-2',
-    name: 'og:title',
-    type: 'opengraph',
-    attribute: 'property',
-    required: false,
-    description: 'Open Graph title for social sharing',
+    attributeKey: 'property',
+    attributeKeyValueToScrape: 'og:title',
+    attributeValueToScrape: 'content',
   },
   {
     id: 'default-3',
-    name: 'og:description',
-    type: 'opengraph',
-    attribute: 'property',
-    required: false,
-    description: 'Open Graph description for social sharing',
+    attributeKey: 'property',
+    attributeKeyValueToScrape: 'og:description',
+    attributeValueToScrape: 'content',
   },
 ];
 
