@@ -220,7 +220,6 @@ export default function MetaTagConfig({
                   type="primary"
                   icon={<SaveOutlined />}
                   onClick={handleSave}
-                  disabled={metaTags.length === 0}
                 >
                   Save Configuration
                 </Button>
