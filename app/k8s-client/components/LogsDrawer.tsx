@@ -54,6 +54,12 @@ export default function LogsDrawer({ open, pod, namespace, containers, onClose }
       setError(err.message ?? 'Network error');
     } finally {
       setLoading(false);
+      // Auto-scroll to bottom after logs are loaded
+      setTimeout(() => {
+        if (logsRef.current) {
+          logsRef.current.scrollTop = logsRef.current.scrollHeight;
+        }
+      }, 100);
     }
   }, [pod, namespace, container, tail, previous]);
 

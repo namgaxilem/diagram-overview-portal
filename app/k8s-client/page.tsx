@@ -77,6 +77,8 @@ interface ScaleState {
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
+const NAMESPACE_STORAGE_KEY = 'k8s-client-namespace';
+
 const RESOURCE_TYPES = [
   { key: 'pods', label: '🟢 Pods' },
   { key: 'deployments', label: '🚀 Deployments' },
@@ -132,8 +134,18 @@ export default function K8sClientPage() {
   const [contexts, setContexts] = useState<K8sContext[]>([]);
   const [currentContext, setCurrentContext] = useState('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
-  const [currentNamespace, setCurrentNamespace] = useState('default');
-  const [debouncedNamespace, setDebouncedNamespace] = useState('default');
+  const [currentNamespace, setCurrentNamespace] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(NAMESPACE_STORAGE_KEY) || 'default';
+    }
+    return 'default';
+  });
+  const [debouncedNamespace, setDebouncedNamespace] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(NAMESPACE_STORAGE_KEY) || 'default';
+    }
+    return 'default';
+  });
   const [ctxLoading, setCtxLoading] = useState(false);
 
   // resources
@@ -250,6 +262,13 @@ export default function K8sClientPage() {
 
     fetchNamespaces();
   }, [fetchContexts, fetchNamespaces]);
+
+  // Save namespace to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && currentNamespace) {
+      localStorage.setItem(NAMESPACE_STORAGE_KEY, currentNamespace);
+    }
+  }, [currentNamespace]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
