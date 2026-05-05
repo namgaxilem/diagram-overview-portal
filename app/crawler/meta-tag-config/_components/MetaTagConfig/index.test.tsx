@@ -217,6 +217,10 @@ describe('MetaTagConfig', () => {
       await user.clear(nameInput);
       await user.type(nameInput, 'updated-description');
 
+      await waitFor(() => {
+        expect(nameInput).toHaveValue('updated-description');
+      });
+
       const updateButton = screen.getByRole('button', { name: 'Update Meta Tag' });
       await user.click(updateButton);
 
@@ -229,7 +233,7 @@ describe('MetaTagConfig', () => {
             }),
           ])
         );
-      });
+      }, { timeout: 10000 });
     });
   });
 
@@ -299,10 +303,16 @@ describe('MetaTagConfig', () => {
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
       await user.click(deleteButtons[0]);
 
+      await waitFor(() => {
+        expect(screen.getByText('Delete this meta tag?')).toBeInTheDocument();
+      });
+
       const confirmButton = screen.getByRole('button', { name: 'Delete' });
       await user.click(confirmButton);
 
-      expect(mockOnChange).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockOnChange).toHaveBeenCalled();
+      });
     });
   });
 

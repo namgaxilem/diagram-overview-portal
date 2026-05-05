@@ -5,13 +5,15 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'happy-dom',
+    environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     css: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['app/**/*.{ts,tsx}'],
       exclude: [
         'node_modules/',
         'vitest.config.ts',
@@ -21,6 +23,8 @@ export default defineConfig({
         '.next/',
         'coverage/',
         '*.config.{js,ts,mjs}',
+        'app/layout.tsx',
+        'app/globals.css',
       ],
     },
   },
