@@ -13,6 +13,7 @@ import {
   Tooltip,
   Alert,
   Empty,
+  Tag,
 } from 'antd';
 import {
   PlusOutlined,
@@ -126,19 +127,19 @@ export default function MetaTagConfig({
       title: 'Find Attribute',
       dataIndex: 'attributeKey',
       key: 'attributeKey',
-      render: (val: string) => <code className="bg-gray-100 px-2 py-1 rounded text-sm">{val}</code>,
+      render: (val: string) => <Tag color="default">{val}</Tag>,
     },
     {
       title: 'Match Value',
       dataIndex: 'attributeKeyValueToScrape',
       key: 'attributeKeyValueToScrape',
-      render: (val: string) => <code className="bg-blue-100 px-2 py-1 rounded text-sm">{val}</code>,
+      render: (val: string) => <Tag color="blue">{val}</Tag>,
     },
     {
       title: 'Extract From',
       dataIndex: 'attributeValueToScrape',
       key: 'attributeValueToScrape',
-      render: (val: string) => <code className="bg-green-100 px-2 py-1 rounded text-sm">{val}</code>,
+      render: (val: string) => <Tag color="green">{val}</Tag>,
     },
     {
       title: 'Selector Preview',
@@ -187,7 +188,21 @@ export default function MetaTagConfig({
     <div className="space-y-6">
       <Alert
         message="Meta Tag Configuration"
-        description="Define meta tag extraction rules. Each rule specifies: (1) which attribute identifies the tag, (2) the value to match, and (3) which attribute contains the data to extract."
+        description={
+          <div className="space-y-2">
+            <div>Define rules to extract meta tag values from HTML pages.</div>
+            <div className="text-xs bg-white/50 p-2 rounded border border-blue-200">
+              <div className="font-medium mb-1">Example:</div>
+              <code className="text-gray-600">{`<meta name="description" content="Page description">`}</code>
+              <div className="mt-1 flex flex-wrap gap-2 items-center">
+                <span>→</span>
+                <Tag color="default">Find: name</Tag>
+                <Tag color="blue">Match: description</Tag>
+                <Tag color="green">Extract: content</Tag>
+              </div>
+            </div>
+          </div>
+        }
         type="info"
         showIcon
         icon={<InfoCircleOutlined />}
