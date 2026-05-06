@@ -81,7 +81,7 @@ export default function MetaTagConfigPage() {
         initValue={DEFAULT_META_TAGS}
         value={metaTags}
         onChange={handleChange}
-        onSave={handleSave}
+        // onSave={handleSave}
       />
     </div>
   );

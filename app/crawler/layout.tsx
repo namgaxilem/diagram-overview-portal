@@ -48,7 +48,7 @@ export default function CrawlerLayout({ children }: CrawlerLayoutProps) {
   };
 
   return (
-    <Layout className="min-h-screen">
+    <Layout className="h-screen">
       <Sider
         width={240}
         className="bg-white border-r border-gray-200"

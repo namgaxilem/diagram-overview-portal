@@ -1,36 +1,66 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import {
-  Form,
-  Input,
-  Button,
-  Card,
-  Table,
-  Space,
-  Popconfirm,
-  Typography,
-  Tooltip,
-  Alert,
-  Empty,
-  Tag,
-} from 'antd';
-import {
-  PlusOutlined,
   DeleteOutlined,
   EditOutlined,
+  InfoCircleOutlined,
+  PlusOutlined,
   QuestionCircleOutlined,
   SaveOutlined,
-  InfoCircleOutlined,
 } from '@ant-design/icons';
+import {
+  Alert,
+  Button,
+  Card,
+  Empty,
+  Form,
+  Input,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+} from 'antd';
+import { useEffect, useState } from 'react';
+
+import FilterBuilder, {
+  FilterConfig,
+  FilterConfigPreview,
+} from '../FilterBuilder';
 
 const { Title } = Typography;
+
+export const MetaTagConfigAlert = (
+  <Alert
+    title="Meta Tag Configuration"
+    description={
+      <div className="space-y-2">
+        <div>Define rules to extract meta tag values from HTML pages.</div>
+        <div className="text-xs bg-white/50 p-2 rounded border border-blue-200">
+          <div className="font-medium mb-1">Example:</div>
+          <Tag color="purple">{`<meta name="description" content="Page description">`}</Tag>
+          <div className="mt-1 flex flex-wrap gap-2 items-center">
+            <span>→</span>
+            <Tag color="default">Find: name</Tag>
+            <Tag color="blue">Match: description</Tag>
+            <Tag color="green">Extract: content</Tag>
+          </div>
+        </div>
+      </div>
+    }
+    type="info"
+    showIcon
+    icon={<InfoCircleOutlined />}
+  />
+);
 
 export interface MetaTagItem {
   id: string;
   attributeKey: string;
   attributeKeyValueToScrape: string;
   attributeValueToScrape: string;
+  filterConfig?: FilterConfig;
 }
 
 export interface MetaTagConfigProps {
@@ -145,69 +175,55 @@ export default function MetaTagConfig({
       title: 'Selector Preview',
       key: 'preview',
       render: (_: unknown, record: MetaTagItem) => (
-        <code className="bg-gray-50 px-2 py-1 rounded text-xs text-gray-600">
+        <Tag color="purple">
           {`<meta ${record.attributeKey}="${record.attributeKeyValueToScrape}" ${record.attributeValueToScrape}="...">`}
-        </code>
+        </Tag>
+      ),
+    },
+    {
+      title: 'Filter',
+      key: 'filterConfig',
+      dataIndex: 'filterConfig',
+      render: (filterConfig: FilterConfig | undefined) => (
+        <FilterConfigPreview config={filterConfig} />
       ),
     },
     ...(readOnly
       ? []
       : [
-          {
-            title: 'Actions',
-            key: 'actions',
-            width: 120,
-            render: (_: unknown, record: MetaTagItem) => (
-              <Space>
-                <Tooltip title="Edit">
-                  <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    onClick={() => handleEdit(record.id)}
-                  />
+        {
+          title: 'Actions',
+          key: 'actions',
+          width: 120,
+          render: (_: unknown, record: MetaTagItem) => (
+            <Space>
+              <Tooltip title="Edit">
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => handleEdit(record.id)}
+                />
+              </Tooltip>
+              <Popconfirm
+                title="Delete this meta tag config?"
+                description="This action cannot be undone."
+                onConfirm={() => handleDelete(record.id)}
+                okText="Delete"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+              >
+                <Tooltip title="Delete">
+                  <Button type="text" danger icon={<DeleteOutlined />} />
                 </Tooltip>
-                <Popconfirm
-                  title="Delete this meta tag config?"
-                  description="This action cannot be undone."
-                  onConfirm={() => handleDelete(record.id)}
-                  okText="Delete"
-                  cancelText="Cancel"
-                  okButtonProps={{ danger: true }}
-                >
-                  <Tooltip title="Delete">
-                    <Button type="text" danger icon={<DeleteOutlined />} />
-                  </Tooltip>
-                </Popconfirm>
-              </Space>
-            ),
-          },
-        ]),
+              </Popconfirm>
+            </Space>
+          ),
+        },
+      ]),
   ];
 
   return (
     <div className="space-y-6">
-      <Alert
-        message="Meta Tag Configuration"
-        description={
-          <div className="space-y-2">
-            <div>Define rules to extract meta tag values from HTML pages.</div>
-            <div className="text-xs bg-white/50 p-2 rounded border border-blue-200">
-              <div className="font-medium mb-1">Example:</div>
-              <code className="text-gray-600">{`<meta name="description" content="Page description">`}</code>
-              <div className="mt-1 flex flex-wrap gap-2 items-center">
-                <span>→</span>
-                <Tag color="default">Find: name</Tag>
-                <Tag color="blue">Match: description</Tag>
-                <Tag color="green">Extract: content</Tag>
-              </div>
-            </div>
-          </div>
-        }
-        type="info"
-        showIcon
-        icon={<InfoCircleOutlined />}
-      />
-
       <Card>
         <div className="flex items-center justify-between mb-4">
           <Title level={5} className="!mb-0">
@@ -308,6 +324,20 @@ export default function MetaTagConfig({
                     <Input placeholder="e.g., content" />
                   </Form.Item>
                 </div>
+
+                <Form.Item
+                  name="filterConfig"
+                  label={
+                    <span>
+                      Filter (Optional){' '}
+                      <Tooltip title="Add filter rules to validate or filter the extracted value">
+                        <QuestionCircleOutlined className="text-gray-400" />
+                      </Tooltip>
+                    </span>
+                  }
+                >
+                  <FilterBuilder />
+                </Form.Item>
 
                 <div className="flex gap-2">
                   <Button type="primary" htmlType="submit">
