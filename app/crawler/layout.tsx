@@ -4,6 +4,7 @@ import React from 'react';
 import { Layout, Menu, Typography, Breadcrumb } from 'antd';
 import {
   GlobalOutlined,
+  EnvironmentOutlined,
   TagsOutlined,
   SettingOutlined,
   HomeOutlined,
@@ -29,6 +30,11 @@ const menuItems = [
     icon: <TagsOutlined />,
     label: <Link href="/crawler/meta-tag-config">Meta Tag Config</Link>,
   },
+  {
+    key: '/crawler/geo-location-config',
+    icon: <EnvironmentOutlined />,
+    label: <Link href="/crawler/geo-location-config">Geo Location Config</Link>,
+  },
 ];
 
 export default function CrawlerLayout({ children }: CrawlerLayoutProps) {
@@ -42,6 +48,8 @@ export default function CrawlerLayout({ children }: CrawlerLayoutProps) {
 
     if (pathname === '/crawler/meta-tag-config') {
       items.push({ title: 'Meta Tag Config' });
+    } else if (pathname === '/crawler/geo-location-config') {
+      items.push({ title: 'Geo Location Config' });
     }
 
     return items;
