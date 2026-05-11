@@ -5,11 +5,15 @@ import 'leaflet/dist/leaflet.css';
 import { useEffect } from 'react';
 import { Circle, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+const PIN_ICON = L.divIcon({
+  className: '',
+  html: `<svg viewBox="0 0 24 24" width="32" height="32" fill="#1677ff" stroke="#fff" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="10" r="3" fill="#fff" stroke="none"/>
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+  </svg>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
 });
 
 const UNIT_TO_METERS: Record<string, number> = {
@@ -73,6 +77,7 @@ export default function MapPicker({
       />
       <Marker
         position={[center.lat, center.lng]}
+        icon={PIN_ICON}
         draggable={!readOnly}
         eventHandlers={
           readOnly

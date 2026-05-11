@@ -27,7 +27,7 @@ import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
-const MapPicker = dynamic(() => import('./MapPicker'), {
+const MapPicker = dynamic(() => import('../MapPicker'), {
   ssr: false,
   loading: () => (
     <div
@@ -156,7 +156,8 @@ export default function GeoLocationConfig({
           )}
         </div>
 
-        <div className={!config.enabled ? 'opacity-50 pointer-events-none select-none' : ''}>
+        {config.enabled && (
+          <>
           <div className="mb-2">
             <Text className="text-sm text-gray-500">
               <AimOutlined className="mr-1" />
@@ -339,7 +340,8 @@ export default function GeoLocationConfig({
               </Form.Item>
             </div>
           </Card>
-        </div>
+          </>
+        )}
 
       </Card>
     </div>
