@@ -13,6 +13,7 @@ import {
   SearchOutlined,
   BugOutlined,
   GlobalOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import React from 'react';
 
@@ -122,6 +123,14 @@ export default function Home() {
       icon: <GlobalOutlined style={{ fontSize: 32 }} />,
       color: '#08979c',
       gradient: 'from-teal-500 to-cyan-600',
+    },
+    {
+      path: '/oauth2/login',
+      title: 'OAuth2 AI Agent Login',
+      description: 'AI-powered authentication loading page with neural network animations',
+      icon: <LoginOutlined style={{ fontSize: 32 }} />,
+      color: '#8b5cf6',
+      gradient: 'from-violet-500 to-purple-600',
     },
   ];
 
