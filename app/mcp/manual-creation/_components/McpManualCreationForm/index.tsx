@@ -51,19 +51,40 @@ export default function McpManualCreationForm({
 }: McpManualCreationFormProps) {
   const [messageApi, contextHolder] = message.useMessage();
 
+  // Helper to ensure tools have ids (for internal use)
+  const ensureToolIds = (data: FormData): FormData => ({
+    ...data,
+    tools: data.tools.map((tool, index) => ({
+      ...tool,
+      id: (tool as ToolConfig).id || `tool-${Date.now()}-${index}`,
+    })) as ToolConfig[],
+  });
+
+  // Helper to strip id from tools for output
+  const stripToolIds = (data: FormData): McpServerOutput => ({
+    type: data.type,
+    name: data.name,
+    owner: data.owner,
+    tools: data.tools.map(({ id, ...rest }) => rest),
+    isPublic: data.isPublic,
+    cacheConfig: data.cacheConfig,
+    authenConfig: data.authenConfig,
+  });
+
   // Internal state - used when not controlled
-  const [internalFormData, setInternalFormData] = useState<FormData>(
-    initialValue ?? DEFAULT_FORM_DATA
+  const [internalFormData, setInternalFormData] = useState<FormData>(() =>
+    ensureToolIds(initialValue ?? DEFAULT_FORM_DATA)
   );
 
   // Determine if controlled or uncontrolled
   const isControlled = value !== undefined;
-  const formData = isControlled ? value : internalFormData;
+  // Ensure tools have ids when using controlled value
+  const formData = isControlled ? ensureToolIds(value) : internalFormData;
 
   // Update internal state when initialValue changes (for reset scenarios)
   useEffect(() => {
     if (!isControlled && initialValue) {
-      setInternalFormData(initialValue);
+      setInternalFormData(ensureToolIds(initialValue));
     }
   }, [initialValue, isControlled]);
 
@@ -73,14 +94,15 @@ export default function McpManualCreationForm({
       if (isControlled) {
         // Controlled mode: call onChange with new value
         if (onChange) {
-          onChange(updater(formData));
+          const newData = updater(formData);
+          onChange(stripToolIds(newData) as FormData);
         }
       } else {
         // Uncontrolled mode: update internal state and optionally notify
         setInternalFormData((prev) => {
           const newData = updater(prev);
           if (onChange) {
-            onChange(newData);
+            onChange(stripToolIds(newData) as FormData);
           }
           return newData;
         });
