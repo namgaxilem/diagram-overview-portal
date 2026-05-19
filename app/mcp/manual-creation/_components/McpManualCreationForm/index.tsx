@@ -8,7 +8,7 @@ import CacheConfigComponent from './_components/CacheConfig';
 import ToolsConfig from './_components/ToolsConfig';
 import type { AuthConfig, CacheConfig, FormData, McpServerOutput, ToolConfig } from './types';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const DEFAULT_FORM_DATA: FormData = {
   type: 'local',
@@ -195,16 +195,8 @@ export default function McpManualCreationForm({
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-5xl mx-auto p-6 md:p-8">
+    <div>
       {contextHolder}
-
-      {/* Header */}
-      <div className="mb-6">
-        <Title level={3} className="!mb-1 !text-gray-800">
-          Create MCP Server
-        </Title>
-        <Text type="secondary">Configure your Model Context Protocol server.</Text>
-      </div>
 
       {/* Basic Info */}
       <Card className="!mb-3 shadow-sm" styles={{ body: { padding: '16px 20px' } }}>
@@ -237,17 +229,20 @@ export default function McpManualCreationForm({
       <CacheConfigComponent cache={formData.cacheConfig} onUpdate={updateCache} />
 
       {/* Submit */}
-      <Divider className="!my-6" />
-      <div className="flex justify-end gap-3">
-        <Button>Cancel</Button>
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          onClick={handleSubmit}
-        >
-          Save Configuration
-        </Button>
-      </div>
+      {onSave && (
+        <>
+          <Divider className="!my-6" />
+          <div className="flex justify-end">
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSubmit}
+            >
+              Save Configuration
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
