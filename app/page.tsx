@@ -14,6 +14,7 @@ import {
   BugOutlined,
   GlobalOutlined,
   LoginOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import React from 'react';
 
@@ -131,6 +132,14 @@ export default function Home() {
       icon: <LoginOutlined style={{ fontSize: 32 }} />,
       color: '#8b5cf6',
       gradient: 'from-violet-500 to-purple-600',
+    },
+    {
+      path: '/mcp',
+      title: 'MCP Tools',
+      description: 'Model Context Protocol server configuration and management tools',
+      icon: <ToolOutlined style={{ fontSize: 32 }} />,
+      color: '#10b981',
+      gradient: 'from-emerald-500 to-green-600',
     },
   ];
 
