@@ -7,6 +7,50 @@ import type { FormData } from './_components/McpManualCreationForm/types';
 
 const { Title, Text } = Typography;
 
+// Pre-defined value for testing edit mode
+const INITIAL_VALUE: FormData = {
+  type: 'local',
+  name: 'my-mcp-server',
+  owner: 'team-alpha',
+  tools: [
+    {
+      id: 'tool-1',
+      name: 'search_products',
+      type: 'azure',
+      indexName: 'product-catalog',
+      description: 'Search for products in the catalog',
+      params: ['query', 'skip', 'top', 'filter'],
+    },
+    {
+      id: 'tool-2',
+      name: 'search_orders',
+      type: 'azure',
+      indexName: 'order-history',
+      description: 'Search order history',
+      params: ['query', 'count'],
+    },
+  ] as FormData['tools'],
+  isPublic: false,
+  cacheConfig: {
+    enabled: true,
+    ttl: 3600,
+    size: 10,
+    location: 'memory',
+  },
+  authenConfig: {
+    enabled: true,
+    azureAD: {
+      enabled: true,
+      groups: ['developers', 'admins'],
+    },
+    accessKey: {
+      enabled: false,
+      headerName: 'x-mcp-api-key',
+      accessKeyValue: '',
+    },
+  },
+};
+
 export default function McpManualCreationPage() {
   const [formData, setFormData] = useState<FormData | null>(null);
 
@@ -19,7 +63,7 @@ export default function McpManualCreationPage() {
     <div className="max-w-5xl mx-auto p-6 md:p-8">
       <div className="mb-6">
         <Title level={3} className="!mb-1 !text-gray-800">
-          Create MCP Server
+          Edit MCP Server
         </Title>
         <Text type="secondary">Configure your Model Context Protocol server.</Text>
       </div>
@@ -40,7 +84,7 @@ export default function McpManualCreationPage() {
         </Card>
       )}
 
-      <McpManualCreationForm onChange={handleChange} />
+      <McpManualCreationForm initialValue={INITIAL_VALUE} onChange={handleChange} />
     </div>
   );
 }

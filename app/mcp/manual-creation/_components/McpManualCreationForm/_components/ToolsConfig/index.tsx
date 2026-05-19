@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Input, Select, Button, Typography, Badge, Empty, Tag, Checkbox } from 'antd';
 import { PlusOutlined, DeleteOutlined, ToolOutlined, SettingOutlined, CopyOutlined } from '@ant-design/icons';
 import type { ToolConfig, AzureToolConfig, PythonToolConfig } from '../../types';
@@ -125,11 +125,7 @@ export default function ToolsConfig({ tools, onAddTool, onRemoveTool }: ToolsCon
       <div className="p-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Tool Builder */}
-          <div>
-            <Text strong className="text-gray-700 block mb-4">
-              Tool Builder
-            </Text>
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="space-y-4">
                 {/* Service Type Selector */}
                 <div>
@@ -232,7 +228,6 @@ export default function ToolsConfig({ tools, onAddTool, onRemoveTool }: ToolsCon
                   Add Tool to Server
                 </Button>
               </div>
-            </div>
           </div>
 
           {/* Configured Tools List */}
@@ -252,7 +247,7 @@ export default function ToolsConfig({ tools, onAddTool, onRemoveTool }: ToolsCon
                 className="py-8"
               />
             ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
                 {tools.map((tool) => (
                   <div
                     key={tool.id}
