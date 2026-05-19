@@ -31,14 +31,14 @@ export default function McpManualCreationForm({ onSave }: McpManualCreationFormP
     },
     authenConfig: {
       enabled: false,
-      methods: ['azure-ad'],
-      azureAd: {
-        tenantId: '',
-        clientId: '',
-        audience: '',
+      azureAD: {
+        enabled: false,
+        groups: [],
       },
-      apiKey: {
+      accessKey: {
+        enabled: false,
         headerName: 'x-mcp-api-key',
+        accessKeyValue: '',
       },
     },
   });
@@ -52,34 +52,22 @@ export default function McpManualCreationForm({ onSave }: McpManualCreationFormP
     }));
   }, []);
 
-  const toggleAuthMethod = useCallback((method: 'azure-ad' | 'api-key') => {
-    setFormData((prev) => {
-      const methods = prev.authenConfig.methods.includes(method)
-        ? prev.authenConfig.methods.filter((m) => m !== method)
-        : [...prev.authenConfig.methods, method];
-      return {
-        ...prev,
-        authenConfig: { ...prev.authenConfig, methods },
-      };
-    });
-  }, []);
-
-  const updateAzureAd = useCallback((field: 'tenantId' | 'clientId' | 'audience', value: string) => {
+  const updateAzureAD = useCallback((updates: Partial<AuthConfig['azureAD']>) => {
     setFormData((prev) => ({
       ...prev,
       authenConfig: {
         ...prev.authenConfig,
-        azureAd: { ...prev.authenConfig.azureAd, [field]: value },
+        azureAD: { ...prev.authenConfig.azureAD, ...updates },
       },
     }));
   }, []);
 
-  const updateApiKey = useCallback((headerName: string) => {
+  const updateAccessKey = useCallback((updates: Partial<AuthConfig['accessKey']>) => {
     setFormData((prev) => ({
       ...prev,
       authenConfig: {
         ...prev.authenConfig,
-        apiKey: { headerName },
+        accessKey: { ...prev.authenConfig.accessKey, ...updates },
       },
     }));
   }, []);
@@ -183,9 +171,8 @@ export default function McpManualCreationForm({ onSave }: McpManualCreationFormP
       <AuthenConfig
         auth={formData.authenConfig}
         onUpdate={updateAuth}
-        onToggleMethod={toggleAuthMethod}
-        onUpdateAzureAd={updateAzureAd}
-        onUpdateApiKey={updateApiKey}
+        onUpdateAzureAD={updateAzureAD}
+        onUpdateAccessKey={updateAccessKey}
       />
 
       {/* Cache Config */}

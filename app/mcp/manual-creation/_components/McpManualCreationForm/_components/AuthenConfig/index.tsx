@@ -1,6 +1,6 @@
-import React from 'react';
-import { Input, Typography } from 'antd';
-import { LockOutlined, SafetyOutlined, KeyOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Input, Typography, Switch, Tag, Button } from 'antd';
+import { LockOutlined, SafetyOutlined, KeyOutlined, PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import type { AuthConfig } from '../../types';
 import SectionHeader from '../SectionHeader';
 
@@ -9,25 +9,36 @@ const { Text } = Typography;
 interface AuthenConfigProps {
   auth: AuthConfig;
   onUpdate: (updates: Partial<AuthConfig>) => void;
-  onToggleMethod: (method: 'azure-ad' | 'api-key') => void;
-  onUpdateAzureAd: (field: 'tenantId' | 'clientId' | 'audience', value: string) => void;
-  onUpdateApiKey: (headerName: string) => void;
+  onUpdateAzureAD: (updates: Partial<AuthConfig['azureAD']>) => void;
+  onUpdateAccessKey: (updates: Partial<AuthConfig['accessKey']>) => void;
 }
 
 export default function AuthenConfig({
   auth,
   onUpdate,
-  onToggleMethod,
-  onUpdateAzureAd,
-  onUpdateApiKey,
+  onUpdateAzureAD,
+  onUpdateAccessKey,
 }: AuthenConfigProps) {
+  const [newGroup, setNewGroup] = useState('');
+
+  const handleAddGroup = () => {
+    if (newGroup.trim() && !auth.azureAD.groups.includes(newGroup.trim())) {
+      onUpdateAzureAD({ groups: [...auth.azureAD.groups, newGroup.trim()] });
+      setNewGroup('');
+    }
+  };
+
+  const handleRemoveGroup = (group: string) => {
+    onUpdateAzureAD({ groups: auth.azureAD.groups.filter((g) => g !== group) });
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-3 overflow-hidden">
       <div className="p-4">
         <SectionHeader
           icon={<LockOutlined />}
           title="Authentication"
-          subtitle="Secure access with Azure AD or API keys"
+          subtitle="Secure access with Azure AD or Access Key"
           enabled={auth.enabled}
           onToggle={(checked) => onUpdate({ enabled: checked })}
         />
@@ -38,125 +49,101 @@ export default function AuthenConfig({
         }`}
       >
         <div className="overflow-hidden">
-          <div className="px-4 pb-4 border-t border-gray-100 pt-4">
-            {/* Auth Method Selection */}
-            <div className="mb-4">
-              <Text strong className="text-gray-600 text-xs uppercase tracking-wide block mb-3">
-                Authentication Methods
-              </Text>
-              <div className="flex gap-3">
-                <div
-                  onClick={() => onToggleMethod('azure-ad')}
-                  className={`flex-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                    auth.methods.includes('azure-ad')
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <SafetyOutlined
-                      className={auth.methods.includes('azure-ad') ? 'text-blue-500' : 'text-gray-400'}
-                    />
-                    <Text strong className={auth.methods.includes('azure-ad') ? 'text-blue-700' : ''}>
-                      Azure AD
-                    </Text>
-                    {auth.methods.includes('azure-ad') && (
-                      <CheckCircleOutlined className="text-blue-500 ml-auto" />
-                    )}
-                  </div>
-                  <Text type="secondary" className="text-xs mt-1 block">
-                    OAuth 2.0 bearer tokens
-                  </Text>
-                </div>
-                <div
-                  onClick={() => onToggleMethod('api-key')}
-                  className={`flex-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                    auth.methods.includes('api-key')
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <KeyOutlined
-                      className={auth.methods.includes('api-key') ? 'text-purple-500' : 'text-gray-400'}
-                    />
-                    <Text strong className={auth.methods.includes('api-key') ? 'text-purple-700' : ''}>
-                      API Key
-                    </Text>
-                    {auth.methods.includes('api-key') && (
-                      <CheckCircleOutlined className="text-purple-500 ml-auto" />
-                    )}
-                  </div>
-                  <Text type="secondary" className="text-xs mt-1 block">
-                    Custom HTTP header
-                  </Text>
-                </div>
-              </div>
-            </div>
-
+          <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-4">
             {/* Azure AD Config */}
-            {auth.methods.includes('azure-ad') && (
-              <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-4">
-                <div className="flex items-center gap-2 mb-3">
+            <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
                   <SafetyOutlined className="text-blue-500" />
                   <Text strong className="text-blue-700 text-sm">
-                    Azure AD Configuration
+                    Azure AD
                   </Text>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <Text className="text-xs text-gray-600 block mb-1">Tenant ID</Text>
-                    <Input
-                      placeholder="xxxxxxxx-xxxx-xxxx-xxxx"
-                      value={auth.azureAd.tenantId}
-                      onChange={(e) => onUpdateAzureAd('tenantId', e.target.value)}
-                      size="small"
-                    />
+                <Switch
+                  size="small"
+                  checked={auth.azureAD.enabled}
+                  onChange={(checked) => onUpdateAzureAD({ enabled: checked })}
+                />
+              </div>
+              {auth.azureAD.enabled && (
+                <div>
+                  <Text className="text-xs text-gray-600 block mb-2">
+                    AD Group IDs (optional - leave empty to allow any authenticated user)
+                  </Text>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {auth.azureAD.groups.map((group) => (
+                      <Tag
+                        key={group}
+                        closable
+                        onClose={() => handleRemoveGroup(group)}
+                        className="!flex items-center gap-1"
+                      >
+                        {group}
+                      </Tag>
+                    ))}
                   </div>
-                  <div>
-                    <Text className="text-xs text-gray-600 block mb-1">Client ID</Text>
+                  <div className="flex gap-2">
                     <Input
-                      placeholder="xxxxxxxx-xxxx-xxxx-xxxx"
-                      value={auth.azureAd.clientId}
-                      onChange={(e) => onUpdateAzureAd('clientId', e.target.value)}
+                      placeholder="Enter AD Group ID"
+                      value={newGroup}
+                      onChange={(e) => setNewGroup(e.target.value)}
+                      onPressEnter={handleAddGroup}
                       size="small"
+                      className="max-w-xs"
                     />
-                  </div>
-                  <div>
-                    <Text className="text-xs text-gray-600 block mb-1">Audience</Text>
-                    <Input
-                      placeholder="api://your-app-id"
-                      value={auth.azureAd.audience}
-                      onChange={(e) => onUpdateAzureAd('audience', e.target.value)}
+                    <Button
                       size="small"
-                    />
+                      icon={<PlusOutlined />}
+                      onClick={handleAddGroup}
+                      disabled={!newGroup.trim()}
+                    >
+                      Add
+                    </Button>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* API Key Config */}
-            {auth.methods.includes('api-key') && (
-              <div className="p-4 bg-purple-50/50 rounded-lg border border-purple-100">
-                <div className="flex items-center gap-2 mb-3">
+            {/* Access Key Config */}
+            <div className="p-4 bg-purple-50/50 rounded-lg border border-purple-100">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
                   <KeyOutlined className="text-purple-500" />
                   <Text strong className="text-purple-700 text-sm">
-                    API Key Configuration
+                    Access Key
                   </Text>
                 </div>
-                <div>
-                  <Text className="text-xs text-gray-600 block mb-1">Header Name</Text>
-                  <Input
-                    placeholder="x-mcp-api-key"
-                    value={auth.apiKey.headerName}
-                    onChange={(e) => onUpdateApiKey(e.target.value)}
-                    size="small"
-                    className="max-w-xs"
-                    prefix={<Text type="secondary" className="text-xs">Header:</Text>}
-                  />
-                </div>
+                <Switch
+                  size="small"
+                  checked={auth.accessKey.enabled}
+                  onChange={(checked) => onUpdateAccessKey({ enabled: checked })}
+                />
               </div>
-            )}
+              {auth.accessKey.enabled && (
+                <div className="space-y-3">
+                  <div>
+                    <Text className="text-xs text-gray-600 block mb-1">Header Name</Text>
+                    <Input
+                      placeholder="x-mcp-api-key"
+                      value={auth.accessKey.headerName}
+                      onChange={(e) => onUpdateAccessKey({ headerName: e.target.value })}
+                      size="small"
+                      className="max-w-xs"
+                    />
+                  </div>
+                  <div>
+                    <Text className="text-xs text-gray-600 block mb-1">Access Key Value</Text>
+                    <Input.Password
+                      placeholder="Enter access key value"
+                      value={auth.accessKey.accessKeyValue}
+                      onChange={(e) => onUpdateAccessKey({ accessKeyValue: e.target.value })}
+                      size="small"
+                      className="max-w-xs"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

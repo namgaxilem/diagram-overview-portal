@@ -1,13 +1,13 @@
 export interface AuthConfig {
   enabled: boolean;
-  methods: ('azure-ad' | 'api-key')[];
-  azureAd: {
-    tenantId: string;
-    clientId: string;
-    audience: string;
+  azureAD: {
+    enabled: boolean;
+    groups: string[];
   };
-  apiKey: {
+  accessKey: {
+    enabled: boolean;
     headerName: string;
+    accessKeyValue: string;
   };
 }
 
