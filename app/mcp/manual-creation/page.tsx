@@ -1,14 +1,18 @@
 'use client';
 
-import { Typography } from 'antd';
+import { useState } from 'react';
+import { Typography, Card } from 'antd';
 import McpManualCreationForm from './_components/McpManualCreationForm/index';
 import type { FormData } from './_components/McpManualCreationForm/types';
 
 const { Title, Text } = Typography;
 
 export default function McpManualCreationPage() {
+  const [formData, setFormData] = useState<FormData | null>(null);
+
   const handleChange = (data: FormData) => {
     console.log('Form Data Changed:', data);
+    setFormData(data);
   };
 
   return (
@@ -19,6 +23,23 @@ export default function McpManualCreationPage() {
         </Title>
         <Text type="secondary">Configure your Model Context Protocol server.</Text>
       </div>
+
+      {/* Form Result Preview */}
+      {formData && (
+        <Card 
+          size="small" 
+          className="mb-4 !bg-gray-900"
+          styles={{ body: { padding: '12px 16px' } }}
+        >
+          <Text className="text-xs text-gray-400 uppercase tracking-wide block mb-2">
+            Form Output (Live)
+          </Text>
+          <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap m-0 max-h-[300px] overflow-auto">
+            {JSON.stringify(formData, null, 2)}
+          </pre>
+        </Card>
+      )}
+
       <McpManualCreationForm onChange={handleChange} />
     </div>
   );

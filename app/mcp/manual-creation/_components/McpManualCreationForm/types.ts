@@ -18,13 +18,24 @@ export interface CacheConfig {
   location: 'memory' | 'disk' | 'redis';
 }
 
-export interface ToolConfig {
+export interface AzureToolConfig {
   id: string;
   name: string;
-  type: string;
+  type: 'azure';
+  indexName: string;
+  description: string;
+  params: string[];
+}
+
+export interface PythonToolConfig {
+  id: string;
+  name: string;
+  type: 'python';
   description: string;
   code: string;
 }
+
+export type ToolConfig = AzureToolConfig | PythonToolConfig;
 
 export interface FormData {
   type: 'local' | 'remote';
