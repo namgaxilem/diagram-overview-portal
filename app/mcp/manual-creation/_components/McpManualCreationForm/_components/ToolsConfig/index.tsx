@@ -52,8 +52,9 @@ export default function ToolsConfig({ tools, onAddTool, onRemoveTool }: ToolsCon
 
   const extractDocstring = (code: string): string => {
     // Match docstring after function definition (with or without parentheses)
-    // Supports both """ and ''' style docstrings
-    const match = code.match(/def\s+[a-zA-Z_][a-zA-Z0-9_]*[^:]*:\s*(?:"""([\s\S]*?)"""|'''([\s\S]*?)''')/);
+    // Supports both """ and ''' style docstrings, including multiline
+    // [\s\S]*? after colon handles newlines before docstring
+    const match = code.match(/def\s+[a-zA-Z_][a-zA-Z0-9_]*[^:]*:[\s\S]*?(?:"""([\s\S]*?)"""|'''([\s\S]*?)''')/);
     return match ? (match[1] || match[2] || '').trim() : '';
   };
 
