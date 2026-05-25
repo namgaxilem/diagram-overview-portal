@@ -2,6 +2,34 @@
 
 import Link from 'next/link';
 
+const externalLinks = [
+  {
+    href: 'https://www.facebook.com',
+    title: 'Facebook',
+    description: 'Connect with friends and the world around you on Facebook',
+  },
+  {
+    href: 'https://www.instagram.com',
+    title: 'Instagram',
+    description: 'Share photos and videos with friends and followers',
+  },
+  {
+    href: 'https://www.twitter.com',
+    title: 'Twitter / X',
+    description: 'See what\'s happening in the world right now',
+  },
+  {
+    href: 'https://www.linkedin.com',
+    title: 'LinkedIn',
+    description: 'Connect with professionals and find job opportunities',
+  },
+  {
+    href: 'https://www.youtube.com',
+    title: 'YouTube',
+    description: 'Watch, share, and discover videos from around the world',
+  },
+];
+
 const subPages = [
   {
     href: '/test-crawl/basic-meta',
@@ -84,6 +112,28 @@ export default function TestCrawlIndex() {
             </Link>
           ))}
         </div>
+
+        <section className="mt-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            External Links (Social Media)
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {externalLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700 text-center"
+              >
+                <h3 className="text-lg font-semibold text-purple-600 dark:text-purple-400 mb-1">
+                  {link.title}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-xs">{link.description}</p>
+              </a>
+            ))}
+          </div>
+        </section>
 
         <section className="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
