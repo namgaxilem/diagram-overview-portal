@@ -15,6 +15,7 @@ import {
   GlobalOutlined,
   LoginOutlined,
   ToolOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import React from 'react';
 
@@ -140,6 +141,14 @@ export default function Home() {
       icon: <ToolOutlined style={{ fontSize: 32 }} />,
       color: '#10b981',
       gradient: 'from-emerald-500 to-green-600',
+    },
+    {
+      path: '/kt-docs',
+      title: 'KT Docs',
+      description: 'Knowledge transfer / handover docs for Search Portal, Crawl Portal, Embed UI, and Crawler',
+      icon: <BookOutlined style={{ fontSize: 32 }} />,
+      color: '#475569',
+      gradient: 'from-slate-600 to-slate-800',
     },
   ];
 

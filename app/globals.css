@@ -55,3 +55,98 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* KT Docs markdown rendering */
+.kt-prose {
+  color: #1f2937;
+  line-height: 1.7;
+  font-size: 15px;
+}
+.kt-prose h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+}
+.kt-prose h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 2rem 0 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.kt-prose h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+}
+.kt-prose p {
+  margin: 0.75rem 0;
+}
+.kt-prose ul,
+.kt-prose ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+.kt-prose ul {
+  list-style: disc;
+}
+.kt-prose ol {
+  list-style: decimal;
+}
+.kt-prose li {
+  margin: 0.25rem 0;
+}
+.kt-prose a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+.kt-prose blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+.kt-prose code {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.85em;
+  background: #f1f5f9;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+.kt-prose pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.kt-prose pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: 0.85rem;
+}
+.kt-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.kt-prose th,
+.kt-prose td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.kt-prose th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+.kt-prose hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
