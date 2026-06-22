@@ -5,7 +5,7 @@
  * Kept free of React so the filter logic can be unit-tested in isolation.
  */
 
-import {
+import type {
   EditableModel,
   EditableValue,
   FilterFieldDefinition,
@@ -36,33 +36,35 @@ function isCompleteGeo(v: GeoRadiusValue): v is { lat: number; lng: number; radi
  * Serialize a single field's editable value into the partial Mongo fragment it
  * contributes, or `null` when the value is incomplete/empty (so it is omitted).
  */
-function serializeField(
-  field: FilterFieldDefinition,
-  value: EditableValue
-): MongoFilter | null {
-  if (value === undefined || value === null) return null;
+function serializeField(field: FilterFieldDefinition, value: EditableValue): MongoFilter | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
 
   switch (field.type) {
     case 'text':
     case 'select': {
       const str = String(value);
-      if (str.trim() === '') return null;
+      if (str.trim() === '') {
+        return null;
+      }
       return { [field.name]: str };
     }
     case 'number': {
-      if (value === ('' as unknown) || Number.isNaN(Number(value))) return null;
+      if (value === ('' as unknown) || Number.isNaN(Number(value))) {
+        return null;
+      }
       return { [field.name]: Number(value) };
     }
     case 'geoRadius': {
-      if (!isGeoRadiusValue(value) || !isCompleteGeo(value)) return null;
+      if (!isGeoRadiusValue(value) || !isCompleteGeo(value)) {
+        return null;
+      }
       return {
         [field.name]: {
           $geoWithin: {
             // MongoDB requires [lng, lat] order.
-            $centerSphere: [
-              [value.lng, value.lat],
-              value.radiusMi / EARTH_RADIUS_MI,
-            ],
+            $centerSphere: [[value.lng, value.lat], value.radiusMi / EARTH_RADIUS_MI],
           },
         },
       };
@@ -85,9 +87,13 @@ export function serializeFilters(
 
   for (const name of Object.keys(model)) {
     const field = fieldByName.get(name);
-    if (!field) continue;
+    if (!field) {
+      continue;
+    }
     const fragment = serializeField(field, model[name]);
-    if (fragment) Object.assign(result, fragment);
+    if (fragment) {
+      Object.assign(result, fragment);
+    }
   }
 
   return result;
@@ -95,12 +101,15 @@ export function serializeFilters(
 
 /** Read a geoRadius fragment back into its editable value. */
 function deserializeGeo(raw: unknown): GeoRadiusValue | null {
-  const sphere =
-    (raw as { $geoWithin?: { $centerSphere?: [[number, number], number] } })
-      ?.$geoWithin?.$centerSphere;
-  if (!Array.isArray(sphere)) return null;
+  const sphere = (raw as { $geoWithin?: { $centerSphere?: [[number, number], number] } })
+    ?.$geoWithin?.$centerSphere;
+  if (!Array.isArray(sphere)) {
+    return null;
+  }
   const [coords, radians] = sphere;
-  if (!Array.isArray(coords)) return null;
+  if (!Array.isArray(coords)) {
+    return null;
+  }
   const [lng, lat] = coords;
   return {
     lat: typeof lat === 'number' ? lat : null,
@@ -122,7 +131,9 @@ export function deserializeFilters(
 
   for (const name of Object.keys(filter ?? {})) {
     const field = fieldByName.get(name);
-    if (!field) continue;
+    if (!field) {
+      continue;
+    }
     const raw = filter[name];
 
     switch (field.type) {
@@ -135,7 +146,9 @@ export function deserializeFilters(
         break;
       case 'geoRadius': {
         const geo = deserializeGeo(raw);
-        if (geo) model[name] = geo;
+        if (geo) {
+          model[name] = geo;
+        }
         break;
       }
     }

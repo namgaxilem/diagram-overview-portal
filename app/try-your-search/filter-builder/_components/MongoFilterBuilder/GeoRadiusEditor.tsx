@@ -1,26 +1,26 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { Suspense, lazy, memo } from 'react';
 import { InputNumber, Spin, Tag, Typography } from 'antd';
 import { AimOutlined } from '@ant-design/icons';
-import dynamic from 'next/dynamic';
-import { GeoRadiusValue } from './types';
+import type { GeoRadiusValue } from './types';
 
 const { Text } = Typography;
 
-const MapPicker = dynamic(
-  () => import('../../../../crawler/meta-tag-config/_components/MapPicker'),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200"
-        style={{ height: 350 }}
-      >
-        <Spin tip="Loading map..." />
-      </div>
-    ),
-  }
+/**
+ * Lazy-loaded so leaflet (which touches `window` at module load) is never
+ * imported during server rendering. Works the same in a plain Vite app, where
+ * it simply becomes a code-split chunk.
+ */
+const MapPicker = lazy(() => import('./MapPicker'));
+
+const MapLoading = () => (
+  <div
+    className="flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200"
+    style={{ height: 350 }}
+  >
+    <Spin tip="Loading map..." />
+  </div>
 );
 
 export interface GeoRadiusEditorProps {
@@ -60,18 +60,20 @@ function GeoRadiusEditor({ value = EMPTY, onChange, disabled }: GeoRadiusEditorP
       <div>
         <Text className="text-xs text-gray-500">
           <AimOutlined className="mr-1" />
-          Click the map or drag the marker to set the center point. The blue circle is the
-          search radius.
+          Click the map or drag the marker to set the center point. The blue circle is the search
+          radius.
         </Text>
       </div>
 
       <div className="rounded-lg overflow-hidden border border-gray-200">
-        <MapPicker
-          center={mapCenter}
-          radius={{ value: value.radiusMi ?? 0, unit: 'mi' }}
-          onCenterChange={handleCenterChange}
-          readOnly={disabled}
-        />
+        <Suspense fallback={<MapLoading />}>
+          <MapPicker
+            center={mapCenter}
+            radius={{ value: value.radiusMi ?? 0, unit: 'mi' }}
+            onCenterChange={handleCenterChange}
+            readOnly={disabled}
+          />
+        </Suspense>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -84,7 +86,11 @@ function GeoRadiusEditor({ value = EMPTY, onChange, disabled }: GeoRadiusEditorP
           step={0.0001}
           precision={6}
           disabled={disabled}
-          addonBefore={<Tag color="blue" className="!m-0">LAT</Tag>}
+          addonBefore={
+            <Tag color="blue" className="!m-0">
+              LAT
+            </Tag>
+          }
           placeholder="e.g. 31.75726"
         />
         <InputNumber
@@ -96,7 +102,11 @@ function GeoRadiusEditor({ value = EMPTY, onChange, disabled }: GeoRadiusEditorP
           step={0.0001}
           precision={6}
           disabled={disabled}
-          addonBefore={<Tag color="green" className="!m-0">LNG</Tag>}
+          addonBefore={
+            <Tag color="green" className="!m-0">
+              LNG
+            </Tag>
+          }
           placeholder="e.g. -106.345542"
         />
         <InputNumber
@@ -106,7 +116,11 @@ function GeoRadiusEditor({ value = EMPTY, onChange, disabled }: GeoRadiusEditorP
           min={0}
           step={1}
           disabled={disabled}
-          addonBefore={<Tag color="orange" className="!m-0">MI</Tag>}
+          addonBefore={
+            <Tag color="orange" className="!m-0">
+              MI
+            </Tag>
+          }
           placeholder="radius (mi)"
         />
       </div>

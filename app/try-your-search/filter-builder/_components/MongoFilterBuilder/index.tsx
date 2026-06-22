@@ -1,11 +1,11 @@
 'use client';
 
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { Input, InputNumber, Select, Space, Typography } from 'antd';
 
 import GeoRadiusEditor from './GeoRadiusEditor';
 import { deserializeFilters, serializeFilters } from './serialization';
-import {
+import type {
   EditableModel,
   EditableValue,
   FilterFieldDefinition,
@@ -27,8 +27,12 @@ const EMPTY_GEO: GeoRadiusValue = { lat: null, lng: null, radiusMi: null };
 const selectFilter = (input: string, option?: { value?: unknown; label?: unknown }) => {
   const q = input.trim().toLowerCase();
   return (
-    String(option?.value ?? '').toLowerCase().includes(q) ||
-    String(option?.label ?? '').toLowerCase().includes(q)
+    String(option?.value ?? '')
+      .toLowerCase()
+      .includes(q) ||
+    String(option?.label ?? '')
+      .toLowerCase()
+      .includes(q)
   );
 };
 
@@ -109,23 +113,20 @@ function MongoFilterBuilder({ value, onChange, fields }: MongoFilterBuilderProps
    * in-progress (incomplete) input that cannot yet be serialized (e.g. a geo
    * filter with only latitude entered).
    */
-  const [model, setModel] = useState<EditableModel>(() =>
-    deserializeFilters(fields, value ?? {})
-  );
+  const [model, setModel] = useState<EditableModel>(() => deserializeFilters(fields, value ?? {}));
 
-  // Sync from external value. Keep the local draft when `value` already matches
-  // what we last emitted (so partial input is preserved); otherwise adopt the
-  // external value.
-  useEffect(() => {
+  // Sync from external value during render (no effect needed). Keep the local
+  // draft when `value` already matches what we last emitted (so partial input is
+  // preserved); otherwise adopt the external value.
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     const incoming = value ?? {};
-    setModel((prev) => {
-      const emitted = serializeFilters(fields, prev);
-      if (JSON.stringify(emitted) === JSON.stringify(incoming)) {
-        return prev;
-      }
-      return deserializeFilters(fields, incoming);
-    });
-  }, [value, fields]);
+    const emitted = serializeFilters(fields, model);
+    if (JSON.stringify(emitted) !== JSON.stringify(incoming)) {
+      setModel(deserializeFilters(fields, incoming));
+    }
+  }
 
   const emit = useCallback(
     (next: EditableModel) => {
@@ -160,3 +161,12 @@ function MongoFilterBuilder({ value, onChange, fields }: MongoFilterBuilderProps
 }
 
 export default memo(MongoFilterBuilder);
+
+export { serializeFilters, deserializeFilters, EARTH_RADIUS_MI } from './serialization';
+export type {
+  FilterFieldDefinition,
+  FilterFieldType,
+  SelectOption,
+  GeoRadiusValue,
+  MongoFilter,
+} from './types';
