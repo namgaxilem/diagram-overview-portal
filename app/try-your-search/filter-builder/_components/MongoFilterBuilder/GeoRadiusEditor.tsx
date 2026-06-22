@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, lazy, memo } from 'react';
+import { Suspense, lazy, memo } from 'react';
 import { InputNumber, Spin, Tag, Typography } from 'antd';
 import { AimOutlined } from '@ant-design/icons';
 import type { GeoRadiusValue } from './types';

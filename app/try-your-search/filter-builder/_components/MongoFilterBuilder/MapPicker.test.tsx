@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import MapPicker from './MapPicker';
@@ -6,22 +5,28 @@ import MapPicker from './MapPicker';
 let capturedHandlers: Record<string, unknown> = {};
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children, style }: Record<string, unknown>) =>
-    React.createElement('div', { 'data-testid': 'map-container', style }, children),
-  TileLayer: () => React.createElement('div', { 'data-testid': 'tile-layer' }),
+  MapContainer: ({ children, style }: Record<string, unknown>) => (
+    <div data-testid="map-container" style={style as object}>
+      {children as never}
+    </div>
+  ),
+  TileLayer: () => <div data-testid="tile-layer" />,
   Marker: ({ position, draggable, eventHandlers }: Record<string, unknown>) => {
     capturedHandlers = {
       ...capturedHandlers,
       ...((eventHandlers as Record<string, unknown>) || {}),
     };
-    return React.createElement('div', {
-      'data-testid': 'marker',
-      'data-pos': JSON.stringify(position),
-      'data-draggable': String(draggable),
-    });
+    return (
+      <div
+        data-testid="marker"
+        data-pos={JSON.stringify(position)}
+        data-draggable={String(draggable)}
+      />
+    );
   },
-  Circle: ({ radius }: Record<string, unknown>) =>
-    React.createElement('div', { 'data-testid': 'circle', 'data-radius': String(radius) }),
+  Circle: ({ radius }: Record<string, unknown>) => (
+    <div data-testid="circle" data-radius={String(radius)} />
+  ),
   useMap: () => ({ panTo: vi.fn() }),
   useMapEvents: (opts: Record<string, unknown>) => {
     capturedHandlers = { ...capturedHandlers, ...opts };
@@ -41,45 +46,45 @@ describe('MapPicker', () => {
   const radius = { value: 5, unit: 'km' };
 
   it('renders map container, tile layer and marker', () => {
-    render(React.createElement(MapPicker, { center, radius }));
+    render(<MapPicker center={center} radius={radius} />);
     expect(screen.getByTestId('map-container')).toBeTruthy();
     expect(screen.getByTestId('tile-layer')).toBeTruthy();
     expect(screen.getByTestId('marker')).toBeTruthy();
   });
 
   it('renders circle when radius > 0', () => {
-    render(React.createElement(MapPicker, { center, radius }));
+    render(<MapPicker center={center} radius={radius} />);
     expect(screen.getByTestId('circle')).toBeTruthy();
   });
 
   it('does not render circle when radius is 0', () => {
-    render(React.createElement(MapPicker, { center, radius: { value: 0, unit: 'km' } }));
+    render(<MapPicker center={center} radius={{ value: 0, unit: 'km' }} />);
     expect(screen.queryByTestId('circle')).toBeFalsy();
   });
 
   it('converts mi unit to meters for the circle radius', () => {
-    render(React.createElement(MapPicker, { center, radius: { value: 1, unit: 'mi' } }));
+    render(<MapPicker center={center} radius={{ value: 1, unit: 'mi' }} />);
     expect(screen.getByTestId('circle').dataset.radius).toBe('1609.344');
   });
 
   it('falls back to km factor for an unknown unit', () => {
-    render(React.createElement(MapPicker, { center, radius: { value: 2, unit: 'parsec' } }));
+    render(<MapPicker center={center} radius={{ value: 2, unit: 'parsec' }} />);
     expect(screen.getByTestId('circle').dataset.radius).toBe('2000');
   });
 
   it('marker is not draggable in readOnly', () => {
-    render(React.createElement(MapPicker, { center, radius, readOnly: true }));
+    render(<MapPicker center={center} radius={radius} readOnly />);
     expect(screen.getByTestId('marker').dataset.draggable).toBe('false');
   });
 
   it('marker is draggable when not readOnly', () => {
-    render(React.createElement(MapPicker, { center, radius }));
+    render(<MapPicker center={center} radius={radius} />);
     expect(screen.getByTestId('marker').dataset.draggable).toBe('true');
   });
 
   it('triggers onCenterChange on map click', () => {
     const onCenterChange = vi.fn();
-    render(React.createElement(MapPicker, { center, radius, onCenterChange }));
+    render(<MapPicker center={center} radius={radius} onCenterChange={onCenterChange} />);
     const clickFn = capturedHandlers.click as
       | ((e: { latlng: { lat: number; lng: number } }) => void)
       | undefined;
@@ -89,7 +94,7 @@ describe('MapPicker', () => {
 
   it('does not trigger onCenterChange when readOnly', () => {
     const onCenterChange = vi.fn();
-    render(React.createElement(MapPicker, { center, radius, onCenterChange, readOnly: true }));
+    render(<MapPicker center={center} radius={radius} onCenterChange={onCenterChange} readOnly />);
     const clickFn = capturedHandlers.click as
       | ((e: { latlng: { lat: number; lng: number } }) => void)
       | undefined;
@@ -99,7 +104,7 @@ describe('MapPicker', () => {
 
   it('triggers onCenterChange on marker dragend', () => {
     const onCenterChange = vi.fn();
-    render(React.createElement(MapPicker, { center, radius, onCenterChange }));
+    render(<MapPicker center={center} radius={radius} onCenterChange={onCenterChange} />);
     const dragendFn = capturedHandlers.dragend as
       | ((e: { target: { getLatLng: () => { lat: number; lng: number } } }) => void)
       | undefined;
