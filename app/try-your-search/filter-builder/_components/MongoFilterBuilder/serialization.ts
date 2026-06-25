@@ -1,20 +1,33 @@
 /**
  * Serialization / deserialization between the builder's editable geo radius
- * value and a valid MongoDB location filter.
+ * value and a `location_filter` object.
  *
  * Kept free of React so the filter logic can be unit-tested in isolation.
  */
 
 import type { GeoRadiusValue, MongoFilter } from './types';
 
-/** Earth radius in miles used to convert miles -> radians for $centerSphere. */
-export const EARTH_RADIUS_MI = 3963.2;
+/** Field name used when the user leaves the field input blank. */
+export const DEFAULT_FIELD = 'location';
 
-/** Mongo document key the location radius filter maps to. */
-export const LOCATION_KEY = 'location';
+/** Top-level key the location radius filter maps to. */
+export const LOCATION_FILTER_KEY = 'location_filter';
+
+/**
+ * Seed value used when the filter is (re)enabled with no usable point yet —
+ * geographic center of the contiguous US with a 10 mi radius.
+ */
+export const DEFAULT_GEO: GeoRadiusValue = {
+  field: DEFAULT_FIELD,
+  lat: 39.8283,
+  lng: -98.5795,
+  radiusMi: 10,
+};
 
 /** A geoRadius value is only serializable once all three numbers are present. */
-function isCompleteGeo(v: GeoRadiusValue): v is { lat: number; lng: number; radiusMi: number } {
+export function isCompleteGeo(
+  v: GeoRadiusValue
+): v is GeoRadiusValue & { lat: number; lng: number; radiusMi: number } {
   return (
     typeof v.lat === 'number' &&
     typeof v.lng === 'number' &&
@@ -26,43 +39,44 @@ function isCompleteGeo(v: GeoRadiusValue): v is { lat: number; lng: number; radi
 }
 
 /**
- * Serialize a geo radius draft into a MongoDB filter, or `{}` when the value is
- * incomplete (so it is omitted from the query).
+ * Serialize a geo radius draft into a `location_filter` object, or `{}` when the
+ * value is incomplete (so it is omitted from the query).
  */
 export function serializeLocation(value: GeoRadiusValue): MongoFilter {
   if (!isCompleteGeo(value)) {
     return {};
   }
   return {
-    [LOCATION_KEY]: {
-      $geoWithin: {
-        // MongoDB requires [lng, lat] order.
-        $centerSphere: [[value.lng, value.lat], value.radiusMi / EARTH_RADIUS_MI],
-      },
+    [LOCATION_FILTER_KEY]: {
+      field: value.field?.trim() || DEFAULT_FIELD,
+      lat: value.lat,
+      lng: value.lng,
+      distance: value.radiusMi,
     },
   };
 }
 
-/** Read a MongoDB location filter back into its editable geo radius value. */
+/** Read a `location_filter` object back into its editable geo radius value. */
 export function deserializeLocation(filter: MongoFilter): GeoRadiusValue {
-  const empty: GeoRadiusValue = { lat: null, lng: null, radiusMi: null };
-  const sphere = (
-    filter?.[LOCATION_KEY] as
-      | { $geoWithin?: { $centerSphere?: [[number, number], number] } }
-      | undefined
-  )?.$geoWithin?.$centerSphere;
+  const empty: GeoRadiusValue = {
+    field: DEFAULT_FIELD,
+    lat: null,
+    lng: null,
+    radiusMi: null,
+  };
 
-  if (!Array.isArray(sphere)) {
+  const lf = filter?.[LOCATION_FILTER_KEY] as
+    | { field?: unknown; lat?: unknown; lng?: unknown; distance?: unknown }
+    | undefined;
+
+  if (!lf || typeof lf !== 'object') {
     return empty;
   }
-  const [coords, radians] = sphere;
-  if (!Array.isArray(coords)) {
-    return empty;
-  }
-  const [lng, lat] = coords;
+
   return {
-    lat: typeof lat === 'number' ? lat : null,
-    lng: typeof lng === 'number' ? lng : null,
-    radiusMi: typeof radians === 'number' ? radians * EARTH_RADIUS_MI : null,
+    field: typeof lf.field === 'string' && lf.field ? lf.field : DEFAULT_FIELD,
+    lat: typeof lf.lat === 'number' ? lf.lat : null,
+    lng: typeof lf.lng === 'number' ? lf.lng : null,
+    radiusMi: typeof lf.distance === 'number' ? lf.distance : null,
   };
 }

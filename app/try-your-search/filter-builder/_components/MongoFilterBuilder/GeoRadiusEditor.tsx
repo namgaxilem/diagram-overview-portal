@@ -1,9 +1,10 @@
 'use client';
 
 import { Suspense, lazy, memo } from 'react';
-import { InputNumber, Spin, Tag, Typography } from 'antd';
-import { AimOutlined } from '@ant-design/icons';
+import { Input, InputNumber, Spin, Tag, Tooltip, Typography } from 'antd';
+import { AimOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import type { GeoRadiusValue } from './types';
+import { DEFAULT_FIELD } from './serialization';
 
 const { Text } = Typography;
 
@@ -29,7 +30,7 @@ export interface GeoRadiusEditorProps {
   disabled?: boolean;
 }
 
-const EMPTY: GeoRadiusValue = { lat: null, lng: null, radiusMi: null };
+const EMPTY: GeoRadiusValue = { field: DEFAULT_FIELD, lat: null, lng: null, radiusMi: null };
 
 /** Fallback map center (geographic center of contiguous US) when no point set. */
 const DEFAULT_CENTER = { lat: 39.8283, lng: -98.5795 };
@@ -75,6 +76,26 @@ function GeoRadiusEditor({ value = EMPTY, onChange, disabled }: GeoRadiusEditorP
           />
         </Suspense>
       </div>
+
+      <Input
+        className="w-full"
+        value={value.field}
+        onChange={(e) => update({ field: e.target.value })}
+        disabled={disabled}
+        placeholder={DEFAULT_FIELD}
+        addonBefore={
+          <Tooltip
+            title={`Document field the geo filter targets (the column searched). Leave blank to default to "${DEFAULT_FIELD}".`}
+          >
+            <span className="inline-flex items-center">
+              <Tag color="purple" className="!m-0">
+                FIELD
+              </Tag>
+              <QuestionCircleOutlined className="ml-1 text-gray-400" />
+            </span>
+          </Tooltip>
+        }
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <InputNumber

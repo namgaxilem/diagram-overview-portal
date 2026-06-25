@@ -35,7 +35,7 @@ describe('GeoRadiusEditor', () => {
   });
 
   it('uses the provided lat/lng as the map center', async () => {
-    render(<GeoRadiusEditor value={{ lat: 10, lng: 20, radiusMi: 5 }} />);
+    render(<GeoRadiusEditor value={{ field: 'location', lat: 10, lng: 20, radiusMi: 5 }} />);
     const picker = await screen.findByTestId('map-picker');
     expect(JSON.parse(picker.dataset.center!)).toEqual({ lat: 10, lng: 20 });
   });
@@ -43,9 +43,19 @@ describe('GeoRadiusEditor', () => {
   it('emits rounded lat/lng on map center change', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<GeoRadiusEditor value={{ lat: null, lng: null, radiusMi: 5 }} onChange={onChange} />);
+    render(
+      <GeoRadiusEditor
+        value={{ field: 'location', lat: null, lng: null, radiusMi: 5 }}
+        onChange={onChange}
+      />
+    );
     await user.click(await screen.findByTestId('map-picker'));
-    expect(onChange).toHaveBeenCalledWith({ lat: 12.345679, lng: -98.765432, radiusMi: 5 });
+    expect(onChange).toHaveBeenCalledWith({
+      field: 'location',
+      lat: 12.345679,
+      lng: -98.765432,
+      radiusMi: 5,
+    });
   });
 
   it('emits radius changes from the radius input', async () => {
@@ -53,7 +63,25 @@ describe('GeoRadiusEditor', () => {
     const onChange = vi.fn();
     render(<GeoRadiusEditor onChange={onChange} />);
     await user.type(screen.getByPlaceholderText('radius (mi)'), '7');
-    expect(onChange).toHaveBeenLastCalledWith({ lat: null, lng: null, radiusMi: 7 });
+    expect(onChange).toHaveBeenLastCalledWith({
+      field: 'location',
+      lat: null,
+      lng: null,
+      radiusMi: 7,
+    });
+  });
+
+  it('emits field changes from the field input', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<GeoRadiusEditor onChange={onChange} />);
+    await user.type(screen.getByPlaceholderText('location'), 'x');
+    expect(onChange).toHaveBeenLastCalledWith({
+      field: 'locationx',
+      lat: null,
+      lng: null,
+      radiusMi: null,
+    });
   });
 
   it('passes readOnly down to the map when disabled', async () => {

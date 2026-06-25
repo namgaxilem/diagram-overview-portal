@@ -10,10 +10,11 @@ const { Title, Paragraph } = Typography;
 
 export default function FilterBuilderPage() {
   const [filter, setFilter] = useState<MongoFilter>({
-    location: {
-      $geoWithin: {
-        $centerSphere: [[-106.345542, 31.75726], 0.015],
-      },
+    location_filter: {
+      field: 'location',
+      lat: 31.75726,
+      lng: -106.345542,
+      distance: 10,
     },
   });
 
