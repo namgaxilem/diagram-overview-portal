@@ -1,19 +1,13 @@
 'use client';
 
-import { Suspense, lazy, memo } from 'react';
+import { memo } from 'react';
+import dynamic from 'next/dynamic';
 import { Input, InputNumber, Spin, Tag, Tooltip, Typography } from 'antd';
 import { AimOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import type { GeoRadiusValue } from './types';
 import { DEFAULT_FIELD } from './serialization';
 
 const { Text } = Typography;
-
-/**
- * Lazy-loaded so leaflet (which touches `window` at module load) is never
- * imported during server rendering. Works the same in a plain Vite app, where
- * it simply becomes a code-split chunk.
- */
-const MapPicker = lazy(() => import('./MapPicker'));
 
 const MapLoading = () => (
   <div
@@ -23,6 +17,17 @@ const MapLoading = () => (
     <Spin tip="Loading map..." />
   </div>
 );
+
+/**
+ * Loaded client-only via next/dynamic (ssr:false) so leaflet — which touches
+ * `window` at module load — is never evaluated during server rendering. React's
+ * `lazy` is not enough here: it still resolves on the server during prerender,
+ * which is what caused the "window is not defined" build error.
+ */
+const MapPicker = dynamic(() => import('./MapPicker'), {
+  ssr: false,
+  loading: () => <MapLoading />,
+});
 
 export interface GeoRadiusEditorProps {
   value?: GeoRadiusValue;
@@ -67,14 +72,12 @@ function GeoRadiusEditor({ value = EMPTY, onChange, disabled }: GeoRadiusEditorP
       </div>
 
       <div className="rounded-lg overflow-hidden border border-gray-200">
-        <Suspense fallback={<MapLoading />}>
-          <MapPicker
-            center={mapCenter}
-            radius={{ value: value.radiusMi ?? 0, unit: 'mi' }}
-            onCenterChange={handleCenterChange}
-            readOnly={disabled}
-          />
-        </Suspense>
+        <MapPicker
+          center={mapCenter}
+          radius={{ value: value.radiusMi ?? 0, unit: 'mi' }}
+          onCenterChange={handleCenterChange}
+          readOnly={disabled}
+        />
       </div>
 
       <Input
