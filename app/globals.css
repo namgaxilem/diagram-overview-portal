@@ -150,3 +150,33 @@ body {
   border-top: 1px solid #e5e7eb;
   margin: 1.5rem 0;
 }
+
+/* Mermaid diagrams (rendered inside .kt-prose by MarkdownView) */
+.mermaid-diagram {
+  display: flex;
+  justify-content: center;
+  margin: 1.25rem 0;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+.mermaid-loading {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-align: center;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+}
+.mermaid-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}

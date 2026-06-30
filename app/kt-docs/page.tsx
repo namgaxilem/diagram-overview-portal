@@ -7,6 +7,8 @@ import {
   ControlOutlined,
   CodeSandboxOutlined,
   BugOutlined,
+  ReadOutlined,
+  SafetyCertificateOutlined,
   ArrowRightOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
@@ -45,6 +47,22 @@ const systems = [
     techColor: 'gold',
     icon: <BugOutlined />,
     description: 'Backend crawling + indexing engine.',
+  },
+  {
+    path: '/kt-docs/crawler-kt-session',
+    title: 'Crawler — KT Session',
+    tech: 'Python',
+    techColor: 'gold',
+    icon: <ReadOutlined />,
+    description: 'Detailed 15-min handover speaker script for the crawler (Scrapy + Playwright), with a Vietnamese appendix.',
+  },
+  {
+    path: '/kt-docs/auth-azure-ad',
+    title: 'Authentication — Azure AD',
+    tech: 'Spring Boot',
+    techColor: 'geekblue',
+    icon: <SafetyCertificateOutlined />,
+    description: 'Azure AD (Entra ID) OAuth2 login flow for the Spring Boot backend + React SPA — sequence diagram and step-by-step.',
   },
 ];
 

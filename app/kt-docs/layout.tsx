@@ -12,6 +12,8 @@ import {
   ControlOutlined,
   CodeSandboxOutlined,
   BugOutlined,
+  ReadOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -56,6 +58,20 @@ const menuItems: KtMenuItem[] = [
     label: 'Crawler',
     tech: 'Python',
     techColor: 'gold',
+  },
+  {
+    key: '/kt-docs/crawler-kt-session',
+    icon: <ReadOutlined />,
+    label: 'Crawler — KT Session',
+    tech: 'Python',
+    techColor: 'gold',
+  },
+  {
+    key: '/kt-docs/auth-azure-ad',
+    icon: <SafetyCertificateOutlined />,
+    label: 'Authentication — Azure AD',
+    tech: 'Spring Boot',
+    techColor: 'geekblue',
   },
 ];
 
